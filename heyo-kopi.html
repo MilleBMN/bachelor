@@ -1,0 +1,541 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My experiment</title>
+    <script src="https://unpkg.com/jspsych@7.2.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.1"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@1.1.1"></script>
+    <link href="https://unpkg.com/jspsych@7.2.3/css/jspsych.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script>
+/* initialize jsPsych */
+var jsPsych = initJsPsych();
+/* create timeline */
+var timeline = [];
+
+/* define welcome message trial */
+var welcome = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus:`
+        <p>Velkommen til eksperimentet. Tryk på en vilkårlig tast for at begynde</p>
+      `
+};
+timeline.push(welcome);
+
+/* start the experiment */
+   /* define instructions trial */
+var instructions = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>I dette eksperiment vil du skulle igennem nogle ordtests.</p>
+        <div style='float: left;'><img src='img/blue.png'></img>
+        <p class='small'><strong>Press the F key</strong></p></div>
+        <div style='float: right;'><img src='img/orange.png'></img>
+        <p class='small'><strong>Press the J key</strong></p></div>
+        </div>
+        <p>Press any key to begin.</p>
+      `,
+    post_trial_gap: 1000
+};
+timeline.push(instructions);
+
+
+   /* define instructions trial */
+   var instructions1 = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>I følgende opgave skal du vælge det ord, der lyder som et ord.</p>
+        <p>Eksempel:</p>
+        <p> <p>
+        <p><strong>jor</strong>   jir   jal   jyr</p>
+        <p>tyfd   <strong>hæsd</strong>   kruf   føse</p> 
+        <p>sgø   sgå   sgæ   <strong>sgi</strong></p>
+        <p> <p>
+        <p>Du har tre minutter til at svare på alle 38 spørgsmål og tiden begynder, 
+            idet du trykker på en vilkårlig tast<p> 
+        </div>
+        <p>Tryk på en vilkårlig tast for at begynde</p>
+      `,
+    post_trial_gap: 1000
+};
+timeline.push(instructions1);
+
+var sproglyde = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+  {
+      prompt: "<p>Vælg det 'ord' der lyder som et rigtigt dansk ord.</p><p>Vælg ordet (gæt evt.):</p>", 
+      name: 'Sproglyd1', 
+      options: ['sbese', 'sbuse', 'sbise', 'befse'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd2', 
+      options: ['sigam', 'sigar', 'sigur', 'sigat'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd3', 
+      options: ['nåmmer', 'nymmer', 'måmmer', 'fåmmer'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd4', 
+      options: ['bukæt', 'busæt', 'nunæd', 'bakæf'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd5', 
+      options: ['sænnen', 'gæssen', 'sæggen', 'saggen'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd6', 
+      options: ['mosgine', 'masgene', 'masgine', 'måsgene'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd7', 
+      options: ['garangsje', 'garase', 'garasje', 'garanje'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd8', 
+      options: ['glæmd', 'gælmd', 'gelmd', 'kleng'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd9', 
+      options: ['låfd', 'låfs', 'lufs', 'tulf'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd10', 
+      options: ['hajn', 'henej', 'hunøj', 'hajan'], 
+      required: true
+    },
+    {
+      prompt: "<p>Vælg ordet (gæt evt.):</p>", 
+      name: 'Sproglyd11', 
+      options: ['sgret', 'sgrit', 'srit', 'grit'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd12', 
+      options: ['bløsd', 'bøls', 'brøsd', 'brums'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd13', 
+      options: ['væm', 'mev', 'mæv', 'vam'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd14', 
+      options: ['sæfs', 'sægs', 'sems', 'sels'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd15', 
+      options: ['tiskprag', 'pratis', 'pratisk', 'pragtisg'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd16', 
+      options: ['dagge ', 'drige', 'derge', 'drægge'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd17', 
+      options: ['syrgus', 'sængus', 'sdirgus', 'sirgus'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd18', 
+      options: ['sabreg', 'fabræg', 'frabem', 'famern'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd19', 
+      options: ['efel', 'æfle', 'efler', 'æfder'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd20', 
+      options: ['kvise', 'kvenne', 'kine', 'knie'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd21', 
+      options: ['dåbbe', 'såbbe', 'såffe', 'gåbbe'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd22', 
+      options: ['uhæl', 'uhæf', 'uhalf', 'uhelg'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd23', 
+      options: ['syller', 'soffer', 'segger', 'semmer'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd24', 
+      options: ['sdrong', 'sdång', 'sdraing', 'sdrung'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd25', 
+      options: ['julbe', 'hælbe', 'jælbe', 'helbø'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd26', 
+      options: ['kæsde', 'busme', 'bæmse', 'bæsde'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd27', 
+      options: ['sdælsærdi', 'sdelfærdi', 'sdilsærdig', 'sdelværdi'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd28', 
+      options: ['patoend', 'pasin', 'pasjænd', 'pajend'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd29', 
+      options: ['ki ', 'fi', 'tu', 'di'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd30', 
+      options: ['na', 'pæ', 'ta', 'øn'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd31', 
+      options: ['åsd', 'åsm', 'åfs', 'åsl'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd32', 
+      options: ['sgå', 'spo', 'sgo', 'snå'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd33', 
+      options: ['ant', 'tan', 'nal', 'na'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd34', 
+      options: ['fælsg', 'fælsd', 'flæsg', 'flels'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd35', 
+      options: ['fys', 'mof', 'tel', 'nel'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd36', 
+      options: ['spal', 'plæs', 'plas', 'salb'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd37', 
+      options: ['hyffe', 'hysle', 'hydde', 'hysfe'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Sproglyd38', 
+      options: ['ols', 'dols', 'sdol', 'dost'], 
+      required: true
+    }
+  ],
+};
+timeline.push(sproglyde);
+
+   /* define instructions trial */
+   var instructions2 = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <p>I næste opgave skal du vælge det rigtig danske ord blandt nogle nonsensord</p>
+        <p>Eksempel:</p>
+        <p> <p>
+        <p><strong>fugl</strong>   faleg   ifleg</p>
+        <p>tuffel   <strong>taffel</strong>   triffel</p> 
+        <p> <p>
+        <p>Du har tre minutter til at svare på alle 38 spørgsmål og tiden begynder, 
+            idet du trykker på en vilkårlig tast<p> 
+        </div>
+        <p>Tryk på en vilkårlig tast for at begynde</p>
+      `,
+    post_trial_gap: 1000
+};
+timeline.push(instructions2);
+
+var Ordforråds = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "<p>Vælg det ord som findes på dansk. Tænk ikke for længe. Du er velkommen til at gætte, hvis du ikke kender svaret</p>", 
+      name: 'Ordforråd1', 
+      options: ['gis', 'gim', 'git'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd2', 
+      options: ['trokæ', 'troklæ', 'tropæ'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd3', 
+      options: ['tights', 'tigts', 'kights'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd4', 
+      options: ['resolut', 'reselut', 'rasolut'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd5', 
+      options: ['repsil', 'reptil', 'reltil'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd6', 
+      options: ['relokviem', 'relikvie', 'relekviem'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd7', 
+      options: ['soloso', 'sololie', 'solerie'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd8', 
+      options: ['reserval', 'resorval', 'reservat'], 
+      required: true
+    }, 
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd9', 
+      options: ['istap', 'istan', 'istansk'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd10', 
+      options: ['trubadur', 'trubamol', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd11', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd12', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd13', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd14', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd15', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd16', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd17', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd18', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd19', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd20', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd21', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd22', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd23', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd24', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd25', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd26', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd27', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd28', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+      prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd29', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }, 
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd30', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd31', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd32', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd33', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd34', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    },
+    {
+    prompt: "Vælg ordet (gæt evt.):", 
+      name: 'Ordforråd35', 
+      options: ['sbese', 'sbuse', 'sbise'], 
+      required: true
+    }
+  ],
+};
+timeline.push(Ordforråds);
+
+
+/* run the experiment */
+jsPsych.run(timeline);
+
+    </script>
+</html>
