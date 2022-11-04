@@ -1,0 +1,491 @@
+---
+title: "analyse_skrrt"
+author: "Mille Bryske"
+date: "2022-10-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(tidyverse, readbulk, ggplot2, RColorBrewer, tidyr)
+```
+
+```{r}
+df_full <- read_bulk("data/vores filer")
+```
+
+*Cleaning*
+
+```{r}
+# Selecting relevant coloumns
+df <- df_full %>% 
+  select(rt, stimulus, response, exp_id, uddannelse, dysleksi, foerstesprog, books, age, gender)
+
+# Spreading the answers to the second vocabulary test and author recognition test out into separate rows
+df <- separate_rows(data = df, response, sep = ",", convert = FALSE)
+
+# Making new coloumns; one with number of question and one with answer given by the participant (basically, we split up the information in the coloumn "response")
+df <- df %>%
+  mutate(valgmulighed = str_remove_all(response, ":.*|\\..*"))
+
+df <- df %>%
+  mutate(svar = str_remove_all(response, ".*:|\\..*"))
+
+# Removing irrelevant text and characters in all coloumns
+df <- df %>%
+  mutate(valgmulighed = str_remove_all(valgmulighed, "[{]"))
+
+df <- df %>%
+  mutate(svar = str_remove_all(svar, "[}]"))
+
+df <- df %>%
+  mutate(uddannelse = str_remove_all(uddannelse, ".*:|\\..*"))
+
+df <- df %>%
+  mutate(uddannelse = str_remove_all(uddannelse, "[}]"))
+
+df <- df %>%
+  mutate(dysleksi = str_remove_all(dysleksi, ".*:|\\..*"))
+
+df <- df %>%
+  mutate(dysleksi = str_remove_all(dysleksi, "[}]"))
+
+df <- df %>%
+  mutate(foerstesprog = str_remove_all(foerstesprog, ".*:|\\..*"))
+
+df <- df %>%
+  mutate(foerstesprog = str_remove_all(foerstesprog, "[}]"))
+
+df <- df %>%
+  mutate(books = str_remove_all(books, ".*:|\\..*"))
+
+df <- df %>%
+  mutate(books = str_remove_all(books, "[}]"))
+
+df <- df %>%
+  mutate(age = str_remove_all(age, ".*:|\\..*"))
+
+df <- df %>%
+  mutate(age = str_remove_all(age, "[}]"))
+
+df <- df %>%
+  mutate(gender = str_remove_all(gender, ".*:|\\..*"))
+
+df <- df %>%
+  mutate(gender = str_remove_all(gender, "[}]"))
+
+# Removing quotation marks in all coloumns
+df <- as.data.frame(sapply(df, function(x) gsub("\"", "", x)))
+
+#removing irrelevant rows 
+df <- df %>% 
+  filter(!grepl('<p>', stimulus)) %>% 
+  filter(!grepl('fakultet', valgmulighed)) %>% 
+  filter(!grepl('ordblind', valgmulighed)) %>% 
+  filter(!grepl('førstesprog', valgmulighed)) %>% 
+  filter(!grepl('Q0', valgmulighed)) %>% 
+  filter(!grepl('Køn', valgmulighed))
+
+df <- df %>% drop_na()
+
+```
+
+**Adding column for answers with long-ass if-else statement + column indicating sex of author + column indicating the correct answer for author** 
+```{r}
+df['accuracy'] <- NA
+
+df$accuracy <- ifelse(df$svar == "gis"|df$svar == "charlatan"|df$svar == "dorsk"|df$svar == "resolut"|df$svar == "reptil"|df$svar == "relikvie"|df$svar == "sololie"|df$svar == "reservat"|df$svar == "istap"|df$svar == "trubadur"|df$svar == "radering"|df$svar == "fjante"|df$svar == "kattun"|df$svar == "halsstarrig"|df$svar == "grif"|df$svar == "dadle"|df$svar == "idelig"|df$svar == "rudel"|df$svar == "sufflør"|df$svar == "prelle"|df$svar == "krill"|df$svar == "spagat"|df$svar == "knibsk"|df$svar == "chalup"|df$svar == "svanger"|df$svar == "dirk"|df$svar == "puld"|df$svar == "rulam"|df$svar == "trappist"|df$svar == "spæge"|df$svar == "chihuahua"|df$svar == "anløben"|df$svar == "skæfte"|df$svar == "klandestin",  1, ifelse(df$stimulus == "audio/forf/Centrifuge.mp3" & df$response == 1 
+|df$stimulus == "audio/forf/Krank.mp3" & df$response == 3 
+|df$stimulus == "audio/forf/Gobelin.mp3" & df$response == 1
+|df$stimulus == "audio/forf/Asiet.mp3" & df$response == 2
+|df$stimulus == "audio/forf/Daggert.mp3" & df$response == 2
+|df$stimulus == "audio/forf/Longjohn.mp3" & df$response == 3
+|df$stimulus == "audio/forf/Chatol.mp3" & df$response == 2
+|df$stimulus == "audio/forf/Albatros.mp3" & df$response == 1
+|df$stimulus == "audio/forf/Fontaene.mp3" & df$response == 3
+|df$stimulus == "audio/forf/Voliere.mp3" & df$response == 0
+|df$stimulus == "audio/forf/Unbraconogle.mp3" & df$response == 1
+|df$stimulus == "audio/forf/Terrin.mp3" & df$response == 2
+|df$stimulus == "audio/forf/Metronom.mp3" & df$response == 1
+|df$stimulus == "audio/forf/Gejstlig.mp3" & df$response == 2
+|df$stimulus == "audio/forf/Alkymi.mp3" & df$response == 1
+|df$stimulus == "audio/forf/Mokkasin.mp3" & df$response == 0
+|df$stimulus == "audio/forf/Eufori.mp3" & df$response == 1
+|df$stimulus == "audio/forf/Litografi.mp3" & df$response == 3
+|df$stimulus == "audio/forf/Cisterne.mp3" & df$response == 1 
+|df$stimulus == "audio/forf/Gadekaer.mp3" & df$response == 0 
+|df$stimulus == "audio/forf/Lazaret.mp3" & df$response == 1 
+|df$stimulus == "audio/forf/Obelisk.mp3" & df$response == 1 
+|df$stimulus == "audio/forf/Visir.mp3" & df$response == 1 
+|df$stimulus == "audio/forf/Trawler.mp3" & df$response == 1 
+|df$stimulus == "audio/forf/Pergola.mp3" & df$response == 2 
+|df$stimulus == "audio/forf/Pendel.mp3" & df$response == 3 
+|df$stimulus == "audio/forf/Vimpel.mp3" & df$response == 2 
+|df$stimulus == "audio/forf/Polio.mp3" & df$response == 3 
+|df$stimulus == "audio/forf/Lumbago.mp3" & df$response == 2 
+|df$stimulus == "audio/forf/Likvid.mp3" & df$response == 3 
+|df$stimulus == "audio/forf/Stramaj.mp3" & df$response == 0 
+|df$stimulus == "audio/forf/Skurv.mp3" & df$response == 0, 1, ifelse(df$svar == "Ikke forfatter", 0, ifelse(df$valgmulighed == "Forfatter3" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter5" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter7" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter10" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter12" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter13" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter16" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter18" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter21" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter22" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter24" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter25" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter26" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter28" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter30" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter32" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter35" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter36" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter38" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter40" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter44" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter46" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter47" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter50" & df$svar == "Forfatter"|
+df$valgmulighed == "Forfatter52" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter53" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter54" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter55" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter58" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter60" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter62" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter65" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter67" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter69" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter71" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter72" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter74" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter75" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter77" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter80" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter82" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter84" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter87" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter89" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter91" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter93" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter95" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter96" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter98" & df$svar == "Forfatter" |
+df$valgmulighed == "Forfatter100" & df$svar == "Forfatter", 1, 
+ifelse(df$valgmulighed == "Forfatter1" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter2" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter4" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter6" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter8" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter9" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter11" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter14" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter15" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter17" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter19" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter20" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter23" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter27" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter29" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter31" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter34" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter33" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter37" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter39" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter42" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter43" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter41" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter45" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter48" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter49" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter51" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter56" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter57" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter59" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter61" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter63" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter64" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter66" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter68" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter70" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter73" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter76" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter78" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter79" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter81" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter83" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter85" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter86" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter88" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter90" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter92" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter94" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter97" & df$svar == "Forfatter"|df$valgmulighed == "Forfatter99" & df$svar == "Forfatter", -1, 0)))))
+
+
+```
+
+```{r}
+df['author_sex'] <- NA
+
+df$author_sex <- ifelse(df$valgmulighed == "Forfatter3"|df$valgmulighed == "Forfatter5"|df$valgmulighed == "Forfatter7"|df$valgmulighed == "Forfatter9"|df$valgmulighed == "Forfatter11"|df$valgmulighed == "Forfatter13"|df$valgmulighed == "Forfatter17"|df$valgmulighed == "Forfatter20"|df$valgmulighed == "Forfatter22"|df$valgmulighed == "Forfatter24"|df$valgmulighed == "Forfatter25"|df$valgmulighed == "Forfatter29"|df$valgmulighed == "Forfatter32"|df$valgmulighed == "Forfatter34"|df$valgmulighed == "Forfatter36"|df$valgmulighed == "Forfatter38"|df$valgmulighed == "Forfatter39"|df$valgmulighed == "Forfatter43"|df$valgmulighed == "Forfatter45"|df$valgmulighed == "Forfatter48"|df$valgmulighed == "Forfatter50"|df$valgmulighed == "Forfatter51"|df$valgmulighed == "Forfatter54"|df$valgmulighed == "Forfatter56"|df$valgmulighed == "Forfatter58"|df$valgmulighed == "Forfatter60"|df$valgmulighed == "Forfatter61"|df$valgmulighed == "Forfatter63"|df$valgmulighed == "Forfatter65"|df$valgmulighed == "Forfatter67"|df$valgmulighed == "Forfatter68"|df$valgmulighed == "Forfatter69"|df$valgmulighed == "Forfatter71"|df$valgmulighed == "Forfatter73"|df$valgmulighed == "Forfatter74"|df$valgmulighed == "Forfatter78"|df$valgmulighed == "Forfatter81"|df$valgmulighed == "Forfatter83"|df$valgmulighed == "Forfatter84"|df$valgmulighed == "Forfatter85"|df$valgmulighed == "Forfatter86"|df$valgmulighed == "Forfatter88"|df$valgmulighed == "Forfatter90"|df$valgmulighed == "Forfatter91"|df$valgmulighed == "Forfatter92"|df$valgmulighed == "Forfatter93"|df$valgmulighed == "Forfatter95"|df$valgmulighed == "Forfatter97"|df$valgmulighed == "Forfatter98"|df$valgmulighed == "Forfatter99","kvinde", ifelse(df$valgmulighed == "Forfatter1"|df$valgmulighed == "Forfatter2"|df$valgmulighed == "Forfatter4"|df$valgmulighed == "Forfatter6"|df$valgmulighed == "Forfatter8"|df$valgmulighed == "Forfatter10"|df$valgmulighed == "Forfatter12"|df$valgmulighed == "Forfatter14"|df$valgmulighed == "Forfatter15"|df$valgmulighed == "Forfatter16"|df$valgmulighed == "Forfatter18"|df$valgmulighed == "Forfatter19"|df$valgmulighed == "Forfatter21"|df$valgmulighed == "Forfatter23"|df$valgmulighed == "Forfatter26"|df$valgmulighed == "Forfatter27"|df$valgmulighed == "Forfatter28"|df$valgmulighed == "Forfatter30"|df$valgmulighed == "Forfatter31"|df$valgmulighed == "Forfatter33"|df$valgmulighed == "Forfatter35"|df$valgmulighed == "Forfatter37"|df$valgmulighed == "Forfatter40"|df$valgmulighed == "Forfatter41"|df$valgmulighed == "Forfatter42"|df$valgmulighed == "Forfatter44"|df$valgmulighed == "Forfatter46"|df$valgmulighed == "Forfatter47"|df$valgmulighed == "Forfatter49"|df$valgmulighed == "Forfatter52"|df$valgmulighed == "Forfatter53"|df$valgmulighed == "Forfatter55"|df$valgmulighed == "Forfatter57"|df$valgmulighed == "Forfatter59"|df$valgmulighed == "Forfatter62"|df$valgmulighed == "Forfatter64"|df$valgmulighed == "Forfatter66"|df$valgmulighed == "Forfatter70"|df$valgmulighed == "Forfatter72"|df$valgmulighed == "Forfatter75"|df$valgmulighed == "Forfatter76"|df$valgmulighed == "Forfatter77"|df$valgmulighed == "Forfatter79"|df$valgmulighed == "Forfatter80"|df$valgmulighed == "Forfatter82"|df$valgmulighed == "Forfatter87"|df$valgmulighed == "Forfatter89"|df$valgmulighed == "Forfatter94"|df$valgmulighed == "Forfatter96"|df$valgmulighed == "Forfatter100","mand", NA))
+
+
+```
+
+
+***New clean dataframe***
+```{r}
+df_clean <- df %>% 
+  select(-c(stimulus, response)) %>% 
+  filter(dysleksi == "Nej")
+
+df_clean['trial_type'] <- NA
+
+df_clean$trial_type <- ifelse(df_clean$svar == "Forfatter" | df_clean$svar == "Ikke forfatter", "author_reg", ifelse(df_clean$svar == 0 | df_clean$svar == 1 | df_clean$svar == 2 | df_clean$svar == 3, "m_lyd", "u_lyd"))
+```
+
+***Separate dfs for each test and an accuracy df***
+```{r}
+# for (particpant in df_clean) {
+#   if (df_clean$trial_type == "author_reg"){
+#   group_by(exp_id)}
+#   print(sum(accuracy))
+#   }
+
+author_reg <- df_clean %>% 
+  filter(trial_type == "author_reg")
+
+author_reg$korrekt_svar <- ifelse(author_reg$valgmulighed == "Forfatter3"|author_reg$valgmulighed == "Forfatter5"|author_reg$valgmulighed == "Forfatter7" |author_reg$valgmulighed == "Forfatter10"|author_reg$valgmulighed == "Forfatter12" |author_reg$valgmulighed == "Forfatter13" |author_reg$valgmulighed == "Forfatter16" |author_reg$valgmulighed == "Forfatter18" |author_reg$valgmulighed == "Forfatter21" |author_reg$valgmulighed == "Forfatter22" |author_reg$valgmulighed == "Forfatter24" |author_reg$valgmulighed == "Forfatter25"|author_reg$valgmulighed == "Forfatter26"|author_reg$valgmulighed == "Forfatter28" |author_reg$valgmulighed == "Forfatter30" |author_reg$valgmulighed == "Forfatter32"|author_reg$valgmulighed == "Forfatter35" |author_reg$valgmulighed == "Forfatter36" |author_reg$valgmulighed == "Forfatter38"|author_reg$valgmulighed == "Forfatter40" |author_reg$valgmulighed == "Forfatter44"|author_reg$valgmulighed == "Forfatter46" |author_reg$valgmulighed == "Forfatter47" |author_reg$valgmulighed == "Forfatter50" |
+author_reg$valgmulighed == "Forfatter52" |
+author_reg$valgmulighed == "Forfatter53" |
+author_reg$valgmulighed == "Forfatter54"  |
+author_reg$valgmulighed == "Forfatter55"  |
+author_reg$valgmulighed == "Forfatter58"  |
+author_reg$valgmulighed == "Forfatter60"  |
+author_reg$valgmulighed == "Forfatter62"  |
+author_reg$valgmulighed == "Forfatter65"  |
+author_reg$valgmulighed == "Forfatter67"  |
+author_reg$valgmulighed == "Forfatter69"  |
+author_reg$valgmulighed == "Forfatter71" |
+author_reg$valgmulighed == "Forfatter72" |
+author_reg$valgmulighed == "Forfatter74" |
+author_reg$valgmulighed == "Forfatter75" |
+author_reg$valgmulighed == "Forfatter77"  |
+author_reg$valgmulighed == "Forfatter80"  |
+author_reg$valgmulighed == "Forfatter82" |
+author_reg$valgmulighed == "Forfatter84"  |
+author_reg$valgmulighed == "Forfatter87" |
+author_reg$valgmulighed == "Forfatter89"  |
+author_reg$valgmulighed == "Forfatter91"  |
+author_reg$valgmulighed == "Forfatter93"  |
+author_reg$valgmulighed == "Forfatter95"  |
+author_reg$valgmulighed == "Forfatter96" |
+author_reg$valgmulighed == "Forfatter98"  |
+author_reg$valgmulighed == "Forfatter100", "Forfatter", "Ikke forfatter")
+
+no_sound <- df_clean %>% 
+  filter(trial_type == "u_lyd")
+
+sound <- df_clean %>% 
+  filter(trial_type == "m_lyd")
+
+author_acc_by_part <- as.data.frame(aggregate(author_reg$accuracy, by=list(ID=author_reg$exp_id, age=author_reg$age, sex=author_reg$gender, books=author_reg$books, faculty=author_reg$uddannelse), FUN=sum))
+sound_acc_by_part <- as.data.frame(aggregate(sound$accuracy, by=list(ID=sound$exp_id), FUN=sum))
+no_sound_acc_by_part <- as.data.frame(aggregate(no_sound$accuracy, by=list(ID=no_sound$exp_id), FUN=sum))
+
+accuracy_all <- merge(author_acc_by_part, sound_acc_by_part, by = "ID")
+accuracy_all <- merge(accuracy_all, no_sound_acc_by_part, by ="ID")
+names(accuracy_all)[6] <- "forfatter"
+names(accuracy_all)[7] <- "lydord"
+names(accuracy_all)[8] <- "ord"
+
+accuracy_all$total_vocabulary <- accuracy_all$lydord+accuracy_all$ord
+accuracy_all$acc_auth_percent <- accuracy_all$forfatter/50*100
+accuracy_all$acc_voc_percent <- accuracy_all$total_vocabulary/66*100
+
+accuracy_all <- accuracy_all[order(-accuracy_all$acc_auth_percent),]
+```
+
+*Visualizing*
+**Plotting author recognition vs vocabulary accuracy**
+```{r}
+# ggplot(accuracy_all, aes(x = ID, y = accuracy_in_percent, fill = ))+
+#   geom_point(stat = "count")
+# 
+# accuracy_all <- accuracy_all %>% 
+#   pivot_longer(ID, names_to = "", values_to = "count")
+
+cols <- c('red','blue');
+ylim <- c(0,100);
+par(lwd=6);
+barplot(
+    t(accuracy_all[c('acc_auth_percent','acc_voc_percent')]),
+    beside=T,
+    ylim=ylim,
+    border=cols,
+    col='white',
+    xlab='Participant',
+    ylab='Percentage correct',
+    legend.text=c('Author accuracy','Vocabulary accuracy'),
+    args.legend=list(text.col=cols,col=cols,border=cols,bty='n')
+);
+
+
+ggplot(accuracy_all, aes(x = acc_auth_percent, y = acc_voc_percent, color = sex))+
+  geom_point()+
+  geom_smooth()+
+  theme_minimal()+
+  labs(x = "Author accuracy", y = "Vocabulary accuracy")
+
+```
+
+**Plotting accurracies separately for the sexes**
+```{r}
+ggplot(accuracy_all, aes(x = sex, y = ord, color = sex))+
+  geom_boxplot(width = 0.5)+
+  theme_minimal()+
+  labs(x = "Gender", y = "Word accuracy")
+
+ggplot(accuracy_all, aes(x = sex, y = lydord, color = sex))+
+  geom_boxplot(width = 0.5)+
+  theme_minimal()+
+  labs(x = "Gender", y = "Sound-word accuracy")
+
+#Merging vocabulary tests
+ggplot(accuracy_all, aes(x = sex, y = total_vocabulary, color = sex))+
+  geom_boxplot(width = 0.5)+
+  theme_minimal()+
+  labs(x = "Gender", y = "Vocabulary accuracy")
+
+ggplot(accuracy_all, aes(x = sex, y = forfatter, color = sex))+
+  geom_boxplot(width = 0.5)+
+  theme_minimal()+
+  labs(x = "Gender", y = "Author accuracy")
+
+```
+
+**Plotting accuracy based on age**
+```{r}
+#Color = sex kan bare fjernes for dem alle, hvis det er...
+
+ggplot(accuracy_all, aes(x = age, y = ord, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Age", y = "Word accuracy")
+
+ggplot(accuracy_all, aes(x = age, y = lydord, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Age", y = "Sound-word accuracy")
+
+#Merging vocabulary tests
+ggplot(accuracy_all, aes(x = age, y = total_vocabulary, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Age", y = "Vocabulary accuracy")
+
+ggplot(accuracy_all, aes(x = age, y = forfatter, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Age", y = "Author accuracy")
+```
+
+**Plotting accuracy based on books read**
+```{r}
+#Color = sex kan bare fjernes for dem alle, hvis det er...
+
+accuracy_all$books <- as.numeric(accuracy_all$books)
+
+ggplot(accuracy_all, aes(x = books, y = ord, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Books read", y = "Word accuracy")
+
+ggplot(accuracy_all, aes(x = books, y = lydord, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Books read", y = "Sound-word accuracy")
+
+#Merging vocabulary tests
+ggplot(accuracy_all, aes(x = books, y = total_vocabulary, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Books read", y = "Vocabulary accuracy")
+
+ggplot(accuracy_all, aes(x = books, y = forfatter, color = sex))+
+  geom_point()+
+  theme_minimal()+
+  labs(x = "Books read", y = "Author accuracy")
+```
+
+**Plotting accuracy based on faculty**
+```{r}
+#Color = sex kan bare fjernes for dem alle, hvis det er...
+
+class(accuracy_all$faculty)
+
+ggplot(accuracy_all, aes(x = faculty, y = ord))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(aes(x = faculty, color=sex))+ 
+  theme_minimal()+
+  labs(x = "Faculty", y = "Word accuracy")
+
+ggplot(accuracy_all, aes(x = faculty, y = lydord))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(aes(x = faculty, color=sex))+ 
+  theme_minimal()+
+  labs(x = "Faculty", y = "Sound-word accuracy")
+
+#Merging vocabulary tests
+ggplot(accuracy_all, aes(x = faculty, y = total_vocabulary))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(aes(x = faculty, color=sex))+ 
+  theme_minimal()+
+  labs(x = "Faculty", y = "Vocabulary accuracy")
+
+ggplot(accuracy_all, aes(x = faculty, y = forfatter))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(aes(x = faculty, color=sex))+ 
+  theme_minimal()+
+  labs(x = "Faculty", y = "Author accuracy")
+```
+
+
+*Checking for normality*
+```{r}
+#ordforråd u. lyd
+round(pastecs::stat.desc(accuracy_all$ord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(accuracy_all, aes(x = ord))+
+  geom_histogram() +
+  theme_minimal()
+#ordforråd m. lyd
+round(pastecs::stat.desc(accuracy_all$lydord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(accuracy_all, aes(x = lydord))+
+  geom_histogram() +
+  theme_minimal()
+#forfattergenkendelse
+round(pastecs::stat.desc(accuracy_all$forfatter, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(accuracy_all, aes(x = forfatter))+
+  geom_histogram() +
+  theme_minimal()
+
+
+
+### Testing assumption ###
+m <- aov(formula = acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+
+# Linearity of residuals
+plot(m, 1, main = 2.1, col.main = 'red')
+
+# Normality of residuals
+plot(m, 2, main = 2.2, col.main = 'red')
+
+# Homoschedasticity
+plot(m, 3, main = 2.3, col.main = 'red')
+#car::leveneTest(acc_voc_percent ~ acc_auth_percent, accuracy_all)
+
+# Influential cases
+plot(m, 4, main = 2.4, col.main = 'red')
+
+```
+
+**Potentially transforming**
+```{r}
+# Log-transforming
+accuracy_all <- accuracy_all %>% 
+  mutate(log_forfatter = log(forfatter))
+
+accuracy_all <- accuracy_all %>% 
+  mutate(log_ord = log(ord))
+
+accuracy_all <- accuracy_all %>% 
+  mutate(log_lydord = log(lydord))
+
+# Checking for normality again
+#ordforråd u. lyd
+round(pastecs::stat.desc(accuracy_all$log_ord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(accuracy_all, aes(x = log_ord))+
+  geom_histogram() +
+  theme_minimal()
+#ordforråd m. lyd
+round(pastecs::stat.desc(accuracy_all$log_lydord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(accuracy_all, aes(x = log_lydord))+
+  geom_histogram() +
+  theme_minimal()
+#forfattergenkendelse
+round(pastecs::stat.desc(accuracy_all$log_forfatter, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(accuracy_all, aes(x = log_forfatter))+
+  geom_histogram() +
+  theme_minimal()
+
+
+```
+
+
+*Undersøg, om der er nogle navne, der aldrig bliver ramt + om der er nogle navne, som alle rammer*
+**Lav ny df**
+```{r}
+author_hits <- author_reg
+
+# Making a new accuracy column, where hits and correct rejections give 1, and misses and false alarm give 0
+author_hits$hitmiss <- ifelse(author_hits$svar == "Forfatter" & author_hits$korrekt_svar == "Forfatter" | author_hits$svar == "Ikke forfatter" & author_hits$korrekt_svar == "Ikke forfatter", 1, 0)
+
+# Summing
+author_hits <- as.data.frame(aggregate(author_hits$hitmiss, by=list(forfatter=author_hits$valgmulighed, svar=author_hits$svar, korrekt=author_hits$korrekt_svar, køn=author_hits$author_sex), FUN=sum))
+
+```
+
+**Visualize**
+```{r}
+ggplot(author_hits, aes(x = forfatter, y = x, fill = køn))+
+  geom_col(aes(x=forfatter), color ="dark grey")+
+  #geom_jitter(aes(x = Pclass, color=Sex , shape = Survived))+ 
+  #scale_shape_manual(values = c(3,19))+
+  facet_grid(cols = vars(korrekt))+
+  labs(title = "Which authors are recognized", x = "Authors", y = "Accuracy")+
+  theme_minimal()
+
+```
+
+**Model author recognition by the sex of the author**
+```{r}
+
+
+```
+
