@@ -1,0 +1,361 @@
+---
+title: "Bachelor pre-process"
+author: "Caroline Hommel"
+date: "10/24/2022"
+output: html_document
+---
+
+```{r}
+pacman::p_load(readbulk, tidyverse, ggplot2, ggpubr, cluster, factoextra)
+```
+
+```{r}
+fixIt <- read_bulk('forfatterGen_data/rigtig data') 
+#fixIt <- read_bulk('forfatterGen_data/vores filer') 
+
+```
+
+Fixing the data frame
+```{r}
+#Removing kolonner vi ikke skal bruge 
+fixIt2 <- fixIt %>% 
+  select(rt, stimulus, response, exp_id, uddannelse, dysleksi, foerstesprog, books, age, gender)
+
+#Seperates the response column into new rows by ,
+fixIt2 <- separate_rows(fixIt2, response, sep = ",")
+
+#Creates new columns, one with the question, one with the answer
+fixIt2 <- fixIt2 %>%
+        mutate(valgmulighed = str_remove_all(response, ":.*|\\..*")) %>% 
+        mutate(Svar = str_remove_all(response, ".*:|\\..*"))
+```
+
+Fixing syntax strings
+```{r}
+#remove weird syntax from strings
+fixIt2 <- fixIt2 %>%
+  mutate(gender = str_remove_all(gender, "[}]")) %>% 
+  mutate(gender = str_remove_all(gender, ".*:|\\..*")) %>%  
+  mutate(uddannelse = str_remove_all(uddannelse, ".*:|\\..*")) %>% 
+  mutate(uddannelse = str_remove_all(uddannelse, "[}]")) %>% 
+  mutate(dysleksi = str_remove_all(dysleksi, ".*:|\\..*")) %>% 
+  mutate(dysleksi = str_remove_all(dysleksi, "[}]")) %>% 
+  mutate(foerstesprog = str_remove_all(foerstesprog, ".*:|\\..*")) %>% 
+  mutate(foerstesprog = str_remove_all(foerstesprog, "[}]")) %>% 
+  mutate(books = str_remove_all(books, ".*:|\\..*")) %>% 
+  mutate(books = str_remove_all(books, "[}]")) %>% 
+  mutate(age = str_remove_all(age, ".*:|\\..*")) %>% 
+  mutate(age = str_remove_all(age, "[}]")) %>% 
+  mutate(valgmulighed = str_remove_all(valgmulighed, "[{]")) %>% 
+  mutate(Svar = str_remove_all(Svar, "[}]")) %>% 
+  mutate(response = str_remove_all(response, "[{]")) %>% 
+  mutate(response = str_remove_all(response, "[}]"))
+
+fixIt2 <- as.data.frame(sapply(fixIt2, function(x) gsub("\"", "", x)))
+
+#removing rows 
+fixIt2 <- fixIt2 %>% 
+  filter(!grepl('<p>', stimulus)) %>% 
+  filter(!grepl('ordblind', response)) %>% 
+  filter(!grepl('fakultet', response)) %>% 
+  filter(!grepl('Køn', response)) %>% 
+  filter(!grepl('Q0', response)) %>% 
+  filter(!grepl('førstesprog', response))
+
+fixIt2 <- fixIt2 %>% drop_na()
+```
+
+Audio, forfatter, Ordforråd 
+```{r}
+fixIt2['accuracy'] <- NA
+
+fixIt2$accuracy <- ifelse(fixIt2$Svar == "gis"|fixIt2$Svar == "charlatan"|fixIt2$Svar == "dorsk"|fixIt2$Svar == "resolut"|fixIt2$Svar == "reptil"|fixIt2$Svar == "relikvie"|fixIt2$Svar == "sololie"|fixIt2$Svar == "reservat"|fixIt2$Svar == "istap"|fixIt2$Svar == "trubadur"|fixIt2$Svar == "radering"|fixIt2$Svar == "fjante"|fixIt2$Svar == "kattun"|fixIt2$Svar == "halsstarrig"|fixIt2$Svar == "grif"|fixIt2$Svar == "dadle"|fixIt2$Svar == "idelig"|fixIt2$Svar == "rudel"|fixIt2$Svar == "sufflør"|fixIt2$Svar == "prelle"|fixIt2$Svar == "krill"|fixIt2$Svar == "spagat"|fixIt2$Svar == "knibsk"|fixIt2$Svar == "chalup"|fixIt2$Svar == "svanger"|fixIt2$Svar == "dirk"|fixIt2$Svar == "puld"|fixIt2$Svar == "rulam"|fixIt2$Svar == "trappist"|fixIt2$Svar == "spæge"|fixIt2$Svar == "chihuahua"|fixIt2$Svar == "anløben"|fixIt2$Svar == "skæfte"|fixIt2$Svar == "klandestin",  1, ifelse(fixIt2$stimulus == "audio/forf/Centrifuge.mp3" & fixIt2$response == 1 
+|fixIt2$stimulus == "audio/forf/Krank.mp3" & fixIt2$response == 3 
+|fixIt2$stimulus == "audio/forf/Gobelin.mp3" & fixIt2$response == 1
+|fixIt2$stimulus == "audio/forf/Asiet.mp3" & fixIt2$response == 2
+|fixIt2$stimulus == "audio/forf/Daggert.mp3" & fixIt2$response == 2
+|fixIt2$stimulus == "audio/forf/Longjohn.mp3" & fixIt2$response == 3
+|fixIt2$stimulus == "audio/forf/Chatol.mp3" & fixIt2$response == 2
+|fixIt2$stimulus == "audio/forf/Albatros.mp3" & fixIt2$response == 1
+|fixIt2$stimulus == "audio/forf/Fontaene.mp3" & fixIt2$response == 3
+|fixIt2$stimulus == "audio/forf/Voliere.mp3" & fixIt2$response == 0
+|fixIt2$stimulus == "audio/forf/Unbraconogle.mp3" & fixIt2$response == 1
+|fixIt2$stimulus == "audio/forf/Terrin.mp3" & fixIt2$response == 2
+|fixIt2$stimulus == "audio/forf/Metronom.mp3" & fixIt2$response == 1
+|fixIt2$stimulus == "audio/forf/Gejstlig.mp3" & fixIt2$response == 2
+|fixIt2$stimulus == "audio/forf/Alkymi.mp3" & fixIt2$response == 1
+|fixIt2$stimulus == "audio/forf/Mokkasin.mp3" & fixIt2$response == 0
+|fixIt2$stimulus == "audio/forf/Eufori.mp3" & fixIt2$response == 1
+|fixIt2$stimulus == "audio/forf/Litografi.mp3" & fixIt2$response == 3
+|fixIt2$stimulus == "audio/forf/Cisterne.mp3" & fixIt2$response == 1 
+|fixIt2$stimulus == "audio/forf/Gadekaer.mp3" & fixIt2$response == 0 
+|fixIt2$stimulus == "audio/forf/Lazaret.mp3" & fixIt2$response == 1 
+|fixIt2$stimulus == "audio/forf/Obelisk.mp3" & fixIt2$response == 1 
+|fixIt2$stimulus == "audio/forf/Visir.mp3" & fixIt2$response == 1 
+|fixIt2$stimulus == "audio/forf/Trawler.mp3" & fixIt2$response == 1 
+|fixIt2$stimulus == "audio/forf/Pergola.mp3" & fixIt2$response == 2 
+|fixIt2$stimulus == "audio/forf/Pendel.mp3" & fixIt2$response == 3 
+|fixIt2$stimulus == "audio/forf/Vimpel.mp3" & fixIt2$response == 2 
+|fixIt2$stimulus == "audio/forf/Polio.mp3" & fixIt2$response == 3 
+|fixIt2$stimulus == "audio/forf/Lumbago.mp3" & fixIt2$response == 2 
+|fixIt2$stimulus == "audio/forf/Likvid.mp3" & fixIt2$response == 3 
+|fixIt2$stimulus == "audio/forf/Stramaj.mp3" & fixIt2$response == 0 
+|fixIt2$stimulus == "audio/forf/Skurv.mp3" & fixIt2$response == 0, 1, ifelse(fixIt2$Svar == "Ikke forfatter", 0, ifelse(fixIt2$valgmulighed == "Forfatter3" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter5" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter7" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter10" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter12" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter13" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter16" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter18" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter21" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter22" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter24" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter25" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter26" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter28" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter30" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter32" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter35" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter36" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter38" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter40" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter44" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter46" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter47" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter50" & fixIt2$Svar == "Forfatter"|
+fixIt2$valgmulighed == "Forfatter52" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter53" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter54" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter55" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter58" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter60" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter62" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter65" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter67" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter69" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter71" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter72" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter74" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter75" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter77" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter80" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter82" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter84" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter87" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter89" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter91" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter93" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter95" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter96" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter98" & fixIt2$Svar == "Forfatter" |
+fixIt2$valgmulighed == "Forfatter100" & fixIt2$Svar == "Forfatter", 1, 
+ifelse(fixIt2$valgmulighed == "Forfatter1" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter2" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter4" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter6" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter8" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter9" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter11" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter14" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter15" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter17" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter19" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter20" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter23" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter27" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter29" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter31" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter34" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter33" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter37" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter39" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter42" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter43" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter41" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter45" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter48" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter49" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter51" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter56" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter57" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter59" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter61" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter63" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter64" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter66" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter68" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter70" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter73" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter76" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter78" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter79" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter81" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter83" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter85" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter86" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter88" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter90" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter92" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter94" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter97" & fixIt2$Svar == "Forfatter"|fixIt2$valgmulighed == "Forfatter99" & fixIt2$Svar == "Forfatter", -1, 0)))))
+```
+
+Data-sæt til arbejde
+```{r}
+Work <- fixIt2 %>% 
+  select(rt, exp_id, uddannelse, dysleksi, foerstesprog, books, age, gender, valgmulighed, Svar, accuracy)
+```
+
+Splitter til tre data frames
+```{r}
+Work_numbers = Work %>% 
+                filter(valgmulighed %in% c(0,1,2,3))
+
+Work_Ordfor = Work %>% 
+              mutate(ordfor = paste0(str_count(valgmulighed, "Ordforråd"))) %>%
+              filter(ordfor == 1)
+
+Work_Forfatter = Work %>% 
+              mutate(Forfatter = paste0(str_count(valgmulighed, "Forfatter"))) %>%
+              filter(Forfatter == 1)
+```
+
+Data frame til analyse
+```{r}
+#udregner sum af korrekte svar for hver test per deltager og laver dataframe
+FA <- as.data.frame(aggregate(Work_Forfatter$accuracy, by=list(ID=Work_Forfatter$exp_id, Work_Forfatter$age, Work_Forfatter$books, Work_Forfatter$gender, Work_Forfatter$uddannelse), FUN=sum))
+FB <- as.data.frame(aggregate(Work_Ordfor$accuracy, by=list(ID=Work_Ordfor$exp_id), FUN=sum))
+FC <- as.data.frame(aggregate(Work_numbers$accuracy, by=list(ID=Work_numbers$exp_id), FUN=sum))
+
+Final <- merge(FA, FB, by = 'ID')
+Final <- merge(Final, FC, by = 'ID')
+
+#rename columns
+names(Final)[2] <- "Alder"
+names(Final)[3] <- "Bøger"
+names(Final)[4] <- "Køn"
+names(Final)[5] <- "Fakultet"
+names(Final)[6] <- "Forfatter"
+names(Final)[7] <- "Ord"
+names(Final)[8] <- "LydOrd"
+
+Final$total_ord <- Final$LydOrd+Final$Ord
+Final$acc_forf_percent <- Final$Forfatter/50*100
+Final$acc_voc_percent <- Final$total_ord/66*100
+
+```
+
+```{r}
+ggplot(Final, aes(x = acc_voc_percent, y = acc_forf_percent, fill=acc_voc_percent)) + 
+  geom_bar(stat = 'identity', position = 'dodge') +
+  facet_wrap(~Fakultet) 
+```
+
+```{r}
+plot(acc_voc_percent ~ acc_forf_percent, Final, col=Final$total_ord)
+
+Final$color <- ifelse(Final$Fakultet == "Humanistisk", "#E7298A", ifelse(Final$Fakultet == "Naturvidenskabeligt", "green", ifelse(Final$Fakultet == "Andet", "#7570B3", ifelse(Final$Fakultet == "Ingeniør", "blue", ifelse(Final$Fakultet == "Business", "#1B9E77", ifelse(Final$Fakultet == "Samfundsvidenskabeligt", "red", ifelse(Final$Fakultet == "Teknik, IT og Design", "#D95F02", "black")))))))
+
+plot(acc_voc_percent ~ acc_forf_percent, Final,
+     col = color,
+     main = 'custom color scheme based on Dark2', cex = 2)
+# legend(x = 'bottomright',
+#        legend = as.character(Final$Fakultet),
+# #        legend = unique(as.character(Final$Fakultet)),
+#        col = Final$color, pch = par("pch"), bty = 'n', xjust = 1)
+```
+
+```{r}
+cols <- c('green','blue');
+ylim <- c(0,100);
+par(lwd=6);
+barplot(
+    t(Final[c('acc_forf_percent','acc_voc_percent')]),
+    beside=T,
+    ylim=ylim,
+    border=cols,
+    col='white',
+    names.arg=Final$ID,
+    xlab='Sprint',
+    ylab='Percentage correct',
+    legend.text=c('Author accuracy','Vocabulary accuracy'),
+    args.legend=list(text.col=cols,col=cols,border=cols,bty='n')
+);
+```
+
+FORARBEJDE TIL MODELLOS
+
+Logtransform + roundpastecs
+```{r}
+# Log-transforming
+Final <- Final %>% 
+  mutate(log_forfatter = log(Forfatter))
+
+Final <- Final %>% 
+  mutate(log_ord = log(Ord))
+
+Final <- Final %>% 
+  mutate(log_lydord = log(LydOrd))
+
+# Checking for normality again
+#ordforråd u. lyd
+round(pastecs::stat.desc(Final$log_ord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(Final, aes(x = log_ord))+
+  geom_histogram() +
+  theme_minimal()
+#ordforråd m. lyd
+round(pastecs::stat.desc(Final$log_lydord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(Final, aes(x = log_lydord))+
+  geom_histogram() +
+  theme_minimal()
+#forfattergenkendelse
+round(pastecs::stat.desc(Final$log_forfatter, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(Final, aes(x = log_forfatter))+
+  geom_histogram() +
+  theme_minimal()
+```
+Tjekker for normalitet
+```{r}
+#Normality -Tjek begge ordforrådstest hver for sig ift. ceiling effects
+ggdensity(Final$acc_voc_percent, 
+          main = "Density plot of tooth length",
+          xlab = "Percent accuracy vocabulary")
+
+ggdensity(Final$acc_forf_percent, 
+          main = "Density plot of tooth length",
+          xlab = "Percent accuracy authors")
+
+ggqqplot(Final$acc_voc_percent)
+ggqqplot(Final$acc_forf_percent)
+ggqqplot(Final$LydOrd)
+ggqqplot(Final$Ord)
+
+shapiro.test(Final$acc_voc_percent)
+shapiro.test(Final$acc_forf_percent)
+
+hist(Final$total_ord, col='steelblue', main='Normal')
+
+qqnorm(Final$total_ord, main='Normal')
+qqline(Final$total_ord)
+```
+
+Correlation analysis
+```{r}
+cor.test(Final$acc_voc_percent, Final$acc_forf_percent, method = "spearman", na.action = "na.exclude")
+# Runnings a Spearman's Rho which is one of the non-parametric tests to use if the variables are not normally distributed.
+```
+P > 0.05 so there is no significant relationship between vocabulary and knowledge of authors. Rho is positive 0.4, so there is a positive, but very weak relation between the two variables, and since, our result is insignificant we cannot be sure that if we drew another random sample from the population that we got the same result.
+
+Modellos
+```{r}
+ggplot(Final, aes(acc_voc_percent, acc_forf_percent)) + 
+  geom_point()
+
+mod <- lm(acc_voc_percent ~ acc_forf_percent, data = Final)
+coef(mod)
+
+
+```
+
+correlater de? model, kan det predictes det ene by det andet?
+Tjek om det er de samme forfattere alle kender og omvendt om alle misser de samme
+
+
+
+CLUSTER ANALYSIS
+```{r}
+pairs(Final[6:11])
+
+plot(Final$acc_voc_percent~ Final$acc_forf_percent, data = Final)
+with(Final,text(Final$acc_voc_percent ~ Final$acc_forf_percent, labels=Final$ID,pos=4))
+```
+
+```{r}
+#Normalization
+z <- Final[,c(6:11)]
+means <- apply(z,2,mean)
+sds <- apply(z,2,sd)
+nor <- scale(z,center=means,scale=sds)
+
+#distance matrix 
+distance = dist(nor)
+
+#Hierarchical agglomerative clustering 
+Final.hclust = hclust(distance)
+plot(Final)
+plot(Final.hclust,labels=Final$ID,main='Default from hclust')
+plot(Final.hclust,hang=-1, labels=Final$ID,main='Default from hclust')
+
+#Hierarchical agglomerative clustering using “average” linkage
+Final.hclust<-hclust(distance,method="average") 
+plot(Final.hclust,hang=-1) 
+
+#Cluster membership
+member = cutree(Final.hclust,2)
+table(member)
+
+#Characterizing clusters
+aggregate(nor,list(member),mean)
+aggregate(Final[,-c(1,1)],list(member),mean)
+
+#Silhouette Plot
+plot(silhouette(cutree(Final.hclust,3), distance))
+
+#Scree plot
+wss <- (nrow(nor)-1)*sum(apply(nor,2,var))
+for (i in 1:2) wss[i] <- sum(kmeans(nor, centers=i)$withinss)
+plot(1:2, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+
+#K-means clustering
+set.seed(123)
+kc<-kmeans(nor,2)
+kc
+
+ot<-nor
+datadistshortset<-dist(ot,method = "euclidean")
+hc1 <- hclust(datadistshortset, method = "complete" )
+pamvshortset <- pam(datadistshortset,3, diss = FALSE)
+clusplot(pamvshortset, shade = FALSE,labels=2,col.clus="blue",col.p="red",span=FALSE,main="Cluster Mapping",cex=1.2)
+
+#scree plot for optimal number of clusters 
+fviz_nbclust(nor, kmeans, method = "wss")
+
+#plot
+k2 <- kmeans(nor, centers = 2, nstart = 25) #nstart is the number of times k-means will be repeated to find the optimal number of clusters 
+fviz_cluster(k2, choose.vars = c("acc_voc_percent", "acc_forf_percent") ,data = nor)
+
+
+```
+
+The author of the factoextra package, Alboukadel Kassambara, informed me that if you omit the choose.vars argument, the function fviz_cluster transforms the initial set of variables into a new set of variables through principal component analysis (PCA). This dimensionality reduction algorithm operates on the four variables and outputs two new variables (Dim1 and Dim2) that represent the original variables, a projection or "shadow" of the original data set. Each dimension represent a certain amount of the variation (i.e. information) contained in the original data set. In this example, Dim1 and Dim2 represent 73% and 22.9% respectively. When plotted, this lower-dimensional picture can be difficult to interpret. In exploratory data analysis, it is therefore perhaps more useful to purposefully select two variables at a time through the choose.vars argument, and then compare the plots.
+
