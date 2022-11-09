@@ -10,14 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-pacman::p_load(tidyverse, readbulk, ggplot2, RColorBrewer, tidyr)
+pacman::p_load(tidyverse, readbulk, ggplot2, RColorBrewer, tidyr, lmerTest)
 ```
 
 ```{r}
 df_full <- read_bulk("data/vores filer")
 ```
 
-*Cleaning*
+#Cleaning
 
 ```{r}
 # Selecting relevant coloumns
@@ -93,7 +93,7 @@ df <- df %>% drop_na()
 
 ```
 
-**Adding column for answers with long-ass if-else statement + column indicating sex of author + column indicating the correct answer for author** 
+##Adding column for answers with long-ass if-else statement + column indicating sex of author + column indicating the correct answer for author
 ```{r}
 df['accuracy'] <- NA
 
@@ -169,7 +169,7 @@ df$author_sex <- ifelse(df$valgmulighed == "Forfatter3"|df$valgmulighed == "Forf
 ```
 
 
-***New clean dataframe***
+###New clean dataframe
 ```{r}
 df_clean <- df %>% 
   select(-c(stimulus, response)) %>% 
@@ -180,7 +180,7 @@ df_clean['trial_type'] <- NA
 df_clean$trial_type <- ifelse(df_clean$svar == "Forfatter" | df_clean$svar == "Ikke forfatter", "author_reg", ifelse(df_clean$svar == 0 | df_clean$svar == 1 | df_clean$svar == 2 | df_clean$svar == 3, "m_lyd", "u_lyd"))
 ```
 
-***Separate dfs for each test and an accuracy df***
+###Separate dfs for each test and an accuracy df
 ```{r}
 # for (particpant in df_clean) {
 #   if (df_clean$trial_type == "author_reg"){
@@ -242,8 +242,8 @@ accuracy_all$acc_voc_percent <- accuracy_all$total_vocabulary/66*100
 accuracy_all <- accuracy_all[order(-accuracy_all$acc_auth_percent),]
 ```
 
-*Visualizing*
-**Plotting author recognition vs vocabulary accuracy**
+#Visualizing
+##Plotting author recognition vs vocabulary accuracy
 ```{r}
 # ggplot(accuracy_all, aes(x = ID, y = accuracy_in_percent, fill = ))+
 #   geom_point(stat = "count")
@@ -275,7 +275,7 @@ ggplot(accuracy_all, aes(x = acc_auth_percent, y = acc_voc_percent, color = sex)
 
 ```
 
-**Plotting accurracies separately for the sexes**
+##Plotting accurracies separately for the sexes
 ```{r}
 ggplot(accuracy_all, aes(x = sex, y = ord, color = sex))+
   geom_boxplot(width = 0.5)+
@@ -300,7 +300,7 @@ ggplot(accuracy_all, aes(x = sex, y = forfatter, color = sex))+
 
 ```
 
-**Plotting accuracy based on age**
+##Plotting accuracy based on age
 ```{r}
 #Color = sex kan bare fjernes for dem alle, hvis det er...
 
@@ -326,7 +326,7 @@ ggplot(accuracy_all, aes(x = age, y = forfatter, color = sex))+
   labs(x = "Age", y = "Author accuracy")
 ```
 
-**Plotting accuracy based on books read**
+##Plotting accuracy based on books read
 ```{r}
 #Color = sex kan bare fjernes for dem alle, hvis det er...
 
@@ -354,7 +354,7 @@ ggplot(accuracy_all, aes(x = books, y = forfatter, color = sex))+
   labs(x = "Books read", y = "Author accuracy")
 ```
 
-**Plotting accuracy based on faculty**
+##Plotting accuracy based on faculty
 ```{r}
 #Color = sex kan bare fjernes for dem alle, hvis det er...
 
@@ -387,45 +387,39 @@ ggplot(accuracy_all, aes(x = faculty, y = forfatter))+
 ```
 
 
-*Checking for normality*
+#Checking for normality (and other assumptions) both visually and numerically
 ```{r}
+#Checking for normality
 #ordforråd u. lyd
 round(pastecs::stat.desc(accuracy_all$ord, basic = FALSE, norm = TRUE), digits = 2)
+
 ggplot(accuracy_all, aes(x = ord))+
   geom_histogram() +
   theme_minimal()
+
+qqnorm(accuracy_all$ord)
+
 #ordforråd m. lyd
 round(pastecs::stat.desc(accuracy_all$lydord, basic = FALSE, norm = TRUE), digits = 2)
+
 ggplot(accuracy_all, aes(x = lydord))+
   geom_histogram() +
   theme_minimal()
+
+qqnorm(accuracy_all$lydord)
+
 #forfattergenkendelse
 round(pastecs::stat.desc(accuracy_all$forfatter, basic = FALSE, norm = TRUE), digits = 2)
+
 ggplot(accuracy_all, aes(x = forfatter))+
   geom_histogram() +
   theme_minimal()
 
-
-
-### Testing assumption ###
-m <- aov(formula = acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
-
-# Linearity of residuals
-plot(m, 1, main = 2.1, col.main = 'red')
-
-# Normality of residuals
-plot(m, 2, main = 2.2, col.main = 'red')
-
-# Homoschedasticity
-plot(m, 3, main = 2.3, col.main = 'red')
-#car::leveneTest(acc_voc_percent ~ acc_auth_percent, accuracy_all)
-
-# Influential cases
-plot(m, 4, main = 2.4, col.main = 'red')
+qqnorm(accuracy_all$forfatter)
 
 ```
 
-**Potentially transforming**
+##Potentially transforming
 ```{r}
 # Log-transforming
 accuracy_all <- accuracy_all %>% 
@@ -457,9 +451,192 @@ ggplot(accuracy_all, aes(x = log_forfatter))+
 
 ```
 
+#Modelling
 
-*Undersøg, om der er nogle navne, der aldrig bliver ramt + om der er nogle navne, som alle rammer*
-**Lav ny df**
+##Vocabulary accuracy by author accuracy
+###The simple stuff: t-test and correlation test
+```{r}
+#Checking homogeneity of variance 
+#Don't know if relevant
+bartlett.test(acc_voc_percent ~ acc_auth_percent, data=accuracy_all)
+
+#T-test
+# We need an independent samples t-test, which this is, I'm pretty sure
+# If the assumption of normality is violated, we need to use WRS2::yuen(x ~ y, data = data) instead
+# T-test vil formentlig være ligegyldig. Citat fra Fabio: "Don't bother running a t-test, just do regression!"
+t.test(acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+
+#Pearson's correlation coefficient 
+#Both variables should be NORMALLY DISTRIBUTED (test, test test), otherwise use different correlation test, e.g. Spearman (kig uge 41, methods 1)
+cor <- cor.test(accuracy_all$acc_voc_percent, accuracy_all$acc_auth_percent, methods = "pearson")
+# The correlation coefficient is hard to interpret, so we standardize it by squaring r. This way we get the 'Effect size' which tells us how much of the variance (our data) is explained by our model. 
+cor[4]
+0.5^2
+#Måske det her ikke lige er den helt rigtige måde at gøre det på
+
+```
+
+###Heatmap of correlation
+```{r}
+
+#Primært taget fra Mikkels script "forfattergenkendelse_analyse"
+pacman::p_load(corrgram, psych)
+correlations<-corr.test(accuracy_all[,10:11],method='pearson')
+correlations$r
+corrgram(correlations$r)
+
+#Caros
+library(corrplot)
+library(RColorBrewer)
+M <-cor(accuracy_all[6:11])
+corrplot(M, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+
+
+
+#Ellers er der det her fra "Class7_notes"
+# pacman::p_load(reshape2)
+# 
+# #plot as heatmap
+# qplot(x=Var1, y=Var2, 
+#       data=melt(cor(child, use="p")), 
+#       fill=value, 
+#       geom="tile") +
+#    scale_fill_gradient2(limits=c(-1, 1))
+# 
+# 
+# 
+# ##### Highlight only the 'worrying' correlation values
+# #plot only values above .7
+# plot_df <- melt(cor(child))
+# plot_df$value[plot_df$value < 0.7 & plot_df$value > - 0.7] = 0
+# qplot(x=Var1, y=Var2, data=plot_df, fill=value, geom="tile") +
+#    scale_fill_gradient2(limits=c(-1, 1))
+```
+
+
+###The less simple stuff: making models
+```{r}
+# Linear regression implies causation (or at least prediction), IS THIS A PROBLEM FOR US?? It's just a correlation study... 
+
+m0 <- lm(acc_voc_percent ~ 0, data = accuracy_all)
+m1 <- lm(acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+summary(m1)
+
+#Konceptuelt spørgsmål: skal vi nogensinde bruge random intercept og slopes??
+    #Det giver måske mening f.eks. med fakultet, hvis vi tænker, at folk fra forskellige fakulteter konsekvent er forskellige? Men hvorfor så ikke bare sætte det som en predictor?? Vi tænker vel i så fald, det er en systematic variance? 
+m2 <- lmer(acc_voc_percent ~ acc_auth_percent + (1|faculty), data = accuracy_all, REML = F) #'REML = F' will allow us to see information criteria for the model (taken from other script)
+m3 <- lm(acc_voc_percent ~ acc_auth_percent + faculty, data = accuracy_all)
+m4 <- lm(acc_voc_percent ~ acc_auth_percent + books, data = accuracy_all)
+m5 <- lm(acc_voc_percent ~ acc_auth_percent + books + faculty, data = accuracy_all)
+m6 <- lm(acc_voc_percent ~ acc_auth_percent + books + faculty + sex, data = accuracy_all)
+m7 <- lm(acc_voc_percent ~ acc_auth_percent + books + faculty + sex + age, data = accuracy_all)
+
+#Overvej om books skal ud, hvis den ikke er "troværdig"
+
+#Skal vi bruge interactions mellem predictorer?? (* i stedet for +)
+m8 <- lm(acc_voc_percent ~ acc_auth_percent + books*faculty, data = accuracy_all) #ikke særlig gennemtænkt eksempel
+
+#ER DET ET PROBLEM AT BRUGE DERES PRÆSTATIONER I PROCENT? Den kan jo aldrig overgå 100, men modellen kan vel godt lave forudsigelser, der er højere? Til gengæld ville den jo heller aldrig kunne overgå hhv. 66 i ordforråd og 100 i forfatter, kan man sige. Er der noget her, der skal gøres? Skal man sætte en nedre og øvre threshold måske?
+
+```
+
+###Comparing models
+```{r}
+# Check class8_notes
+
+#See adjusted r squared of the models from their summaries
+summary(m3)$adj.r.squared
+
+# anova 
+anova(m0, m1, m2, m3, m4, m5, m6, m7)
+
+# AIC
+AIC(m0, m1, m2, m3, m4, m5, m6, m7)
+
+```
+
+###Testing assumptions on the chosen model
+```{r}
+### Testing assumptions
+m <- aov(formula = acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+#Put chosen model here
+
+# Linearity of residuals
+plot(m, 1, main = 2.1, col.main = 'red')
+
+# Normality of residuals
+plot(m, 2, main = 2.2, col.main = 'red')
+
+# Homoschedasticity
+plot(m, 3, main = 2.3, col.main = 'red')
+#car::leveneTest(acc_voc_percent ~ acc_auth_percent, accuracy_all)
+
+# Influential cases
+plot(m, 4, main = 2.4, col.main = 'red')
+
+# Independence of residuals
+car::durbinWatsonTest(model)
+
+```
+
+
+###Post-hoc comparison??? I don't think so, since we are doing linear regression instead of using aov()
+```{r}
+# The lines below are from my notes to the lecture in week 45 on methods 1
+
+#In this example we've got significant results (from a test comparing means with aov()), meaning that somewhere there's a difference in means between groups. BUT we don't know where, so you got to analyze that afterwards. You do that with a post-hoc comparison with corrections
+
+#When you know regression, then ANOVA (aov()) isn't really useful for anything !!!
+  #BESIDES: you can use anova() to compare models and pick the best one
+#One-way anova is like linear regression, two-way anova is like when you have two predictors etc.
+```
+
+
+##Skal vi modellere accuracy ~ books + fakultet + age + sex (alt efter hvilke der giver mening) for både forfatter og ordforråd??? For selv hvis acc_auth ikke kan predicte acc_voc, så kan det være, at vi stadig kan opdage en anden sjov korrelation
+```{r}
+#Kun ordforråd uden lyd
+o_acc <- lm(ord ~ faculty, data = accuracy_all)
+o_acc2 <- lm(ord ~ books, data = accuracy_all)
+o_acc3 <- lm(ord ~ faculty + sex, data = accuracy_all)
+o_acc4 <- lm(ord ~ faculty + sex + age, data = accuracy_all)
+#Prøv også gerne med andre sammensætninger
+
+#Kun lydord
+l_acc <- lm(lydord ~ faculty, data = accuracy_all)
+l_acc2 <- lm(lydord ~ books, data = accuracy_all)
+l_acc3 <- lm(lydord ~ faculty + sex, data = accuracy_all)
+l_acc4 <- lm(lydord ~ faculty + sex + age, data = accuracy_all)
+
+#Begge ordforråd (i procent accuracy)
+voc_acc <- lm(acc_voc_percent ~ faculty, data = accuracy_all)
+voc_acc2 <- lm(acc_voc_percent ~ books, data = accuracy_all)
+voc_acc3 <- lm(acc_voc_percent ~ faculty + sex, data = accuracy_all)
+voc_acc4 <- lm(acc_voc_percent ~ faculty + sex + age, data = accuracy_all)
+
+#Forfattergenkendelse (i procent accuracy)
+for_acc <- lm(acc_auth_percent ~ faculty, data = accuracy_all)
+for_acc2 <- lm(acc_auth_percent ~ books, data = accuracy_all)
+for_acc3 <- lm(acc_auth_percent ~ faculty + sex, data = accuracy_all)
+for_acc4 <- lm(acc_auth_percent ~ faculty + sex + age, data = accuracy_all)
+
+
+#Skal vi bruge den store df (df_clean) nogensinde, så det er repeated measures??? 
+#Tror det sgu faktisk ikke... 
+
+#Skal vi bruge interactions mellem predictorer?? (* i stedet for +)
+
+
+```
+
+###Comparing models
+```{r}
+
+```
+
+
+#Undersøg, om der er nogle navne, der aldrig bliver ramt + om der er nogle navne, som alle rammer
+##Lav ny df
 ```{r}
 author_hits <- author_reg
 
@@ -467,13 +644,25 @@ author_hits <- author_reg
 author_hits$hitmiss <- ifelse(author_hits$svar == "Forfatter" & author_hits$korrekt_svar == "Forfatter" | author_hits$svar == "Ikke forfatter" & author_hits$korrekt_svar == "Ikke forfatter", 1, 0)
 
 # Summing
-author_hits <- as.data.frame(aggregate(author_hits$hitmiss, by=list(forfatter=author_hits$valgmulighed, svar=author_hits$svar, korrekt=author_hits$korrekt_svar, køn=author_hits$author_sex), FUN=sum))
+author_hits <- as.data.frame(aggregate(author_hits$hitmiss, by=list(forfatter=author_hits$valgmulighed, korrekt=author_hits$korrekt_svar, køn=author_hits$author_sex), FUN=sum))
+names(author_hits)[4] <- "summed_acc"
+
+
+# This (the limes below) ended up being irrelevant since the plot still didn't look intuitive
+
+# Make a new coloum where I remove "Forfatter" to make the column 'forfatter' numeric and then ordering the dataframe after the number of the author
+author_hits$forfatternummer <- author_hits$forfatter
+author_hits$forfatternummer<-gsub("Forfatter","", as.character(author_hits$forfatternummer))
+author_hits$forfatternummer <- as.numeric(author_hits$forfatternummer)
+author_hits <- author_hits[order(author_hits$forfatternummer),]
+
 
 ```
 
-**Visualize**
+##Visualize
 ```{r}
-ggplot(author_hits, aes(x = forfatter, y = x, fill = køn))+
+# This is not super intuitive because the authors should have had numbers from 1-50 and 51-100 for the x-axes to be more meaningful
+ggplot(author_hits, aes(x = forfatter, y = summed_acc, fill = køn))+
   geom_col(aes(x=forfatter), color ="dark grey")+
   #geom_jitter(aes(x = Pclass, color=Sex , shape = Survived))+ 
   #scale_shape_manual(values = c(3,19))+
@@ -481,11 +670,47 @@ ggplot(author_hits, aes(x = forfatter, y = x, fill = køn))+
   labs(title = "Which authors are recognized", x = "Authors", y = "Accuracy")+
   theme_minimal()
 
+# Instead I just split the dataframe and plot two different plots
+author_hits_forfattere <- author_hits %>% 
+  filter(korrekt == "Forfatter")
+author_hits_forfattere$forfatternummer <- c(1:50)
+  
+author_hits_ikkeforfattere <- author_hits %>% 
+  filter(korrekt == "Ikke forfatter")
+author_hits_ikkeforfattere$forfatternummer <- c(1:50)
+
+ggplot(author_hits_forfattere, aes(x = forfatternummer, y = summed_acc, fill = køn))+
+  geom_col(aes(x=forfatternummer), color ="dark grey")+
+  #geom_jitter(aes(x = Pclass, color=Sex , shape = Survived))+ 
+  #scale_shape_manual(values = c(3,19))+
+  #facet_grid(cols = vars(korrekt))+
+  labs(title = "Which authors are correctly identified", x = "Authors", y = "Accuracy")+
+  theme_minimal()
+
+ggplot(author_hits_ikkeforfattere, aes(x = forfatternummer, y = summed_acc, fill = køn))+
+  geom_col(aes(x=forfatternummer), color ="dark grey")+
+  #geom_jitter(aes(x = Pclass, color=Sex , shape = Survived))+ 
+  #scale_shape_manual(values = c(3,19))+
+  #facet_grid(cols = vars(korrekt))+
+  labs(title = "Which non-authors are correctly identified", x = "Authors", y = "Accuracy")+
+  theme_minimal()
+
 ```
 
-**Model author recognition by the sex of the author**
+##T-test: author recognition by the sex of the author
 ```{r}
+#Checking homogeneity of variance 
+#Don't know if relevant
+bartlett.test(summed_acc ~ køn, data=author_hits)
 
+#T-test
+t.test(summed_acc ~ køn, data = author_hits)
+
+#Linear regression
+summary(lm(summed_acc ~ køn, data = author_hits))
 
 ```
 
+Andre sjove spørsgmål, man kunne stille:
+- Er nogen (f.eks. køn eller fakultet) mere tilbøjelige til at være "modige" med at svare Forfatter?
+- Er der et own-gender bias? Altså svarer kvinder oftere at kvinder er forfattere og omvendt? 
