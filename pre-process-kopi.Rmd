@@ -6,12 +6,17 @@ output: html_document
 ---
 
 ```{r}
-pacman::p_load(readbulk, tidyverse, ggplot2, ggpubr, cluster, factoextra)
+pacman::p_load(readbulk, tidyverse, ggplot2, ggpubr, cluster, factoextra, PerformanceAnalytics, lme4, tibble, vctrs)
 ```
 
 ```{r}
 fixIt <- read_bulk('forfatterGen_data/rigtig data') 
 #fixIt <- read_bulk('forfatterGen_data/vores filer') 
+
+#deleting id's on those not fit for the experiment
+# omit <- c("mbazte","3asjq1","3spth5","ck3gqh", "3asjq1", "8mmtx9", "bcrg2j",
+# '3ovwc1','2onc8w','7dykwl', "zdf9td", "yxw221", "wvg4cm", "vfsse3", "uwy36q", "rez8hg", "gyk81z", "9czh3l", "4t0bm6", "10cshl", "youp6n")
+# fixIt <- filter(fixIt, !(exp_id %in% omit))
 
 ```
 
@@ -213,6 +218,12 @@ barplot(
 );
 ```
 
+```{r}
+#hvor ligger chance-level -find ud af, hvornår folk ikke er en robot 
+plot(pbinom(1:34,34,1/3))
+plot(pbinom(1:32,32,1/4))
+```
+
 FORARBEJDE TIL MODELLOS
 
 Logtransform + roundpastecs
@@ -229,18 +240,18 @@ Final <- Final %>%
 
 # Checking for normality again
 #ordforråd u. lyd
-round(pastecs::stat.desc(Final$log_ord, basic = FALSE, norm = TRUE), digits = 2)
-ggplot(Final, aes(x = log_ord))+
+round(pastecs::stat.desc(Final$Ord, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(Final, aes(x = Ord))+
   geom_histogram() +
   theme_minimal()
 #ordforråd m. lyd
-round(pastecs::stat.desc(Final$log_lydord, basic = FALSE, norm = TRUE), digits = 2)
-ggplot(Final, aes(x = log_lydord))+
+round(pastecs::stat.desc(Final$LydOrd, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(Final, aes(x = LydOrd))+
   geom_histogram() +
   theme_minimal()
 #forfattergenkendelse
-round(pastecs::stat.desc(Final$log_forfatter, basic = FALSE, norm = TRUE), digits = 2)
-ggplot(Final, aes(x = log_forfatter))+
+round(pastecs::stat.desc(Final$Forfatter, basic = FALSE, norm = TRUE), digits = 2)
+ggplot(Final, aes(x = Forfatter))+
   geom_histogram() +
   theme_minimal()
 ```
@@ -272,7 +283,12 @@ qqline(Final$total_ord)
 Correlation analysis
 ```{r}
 cor.test(Final$acc_voc_percent, Final$acc_forf_percent, method = "spearman", na.action = "na.exclude")
-# Runnings a Spearman's Rho which is one of the non-parametric tests to use if the variables are not normally distributed.
+# Runnings a Spearman's Rho which is one of the non-parametric tests to use if the variables are not normally distributed. otherwise pearson 
+
+#find estimate and *r squared
+
+#The conditional R^2 = 0.70, which means that 70% of the variance is explained by our model.
+
 ```
 P > 0.05 so there is no significant relationship between vocabulary and knowledge of authors. Rho is positive 0.4, so there is a positive, but very weak relation between the two variables, and since, our result is insignificant we cannot be sure that if we drew another random sample from the population that we got the same result.
 
@@ -285,14 +301,46 @@ mod <- lm(acc_voc_percent ~ acc_forf_percent, data = Final)
 coef(mod)
 
 
+accuracy_mixed <- lmer(acc_voc_percent ~ Alder + (1 | Fakultet), data = Final)
+summary(accuracy_mixed)
+confint(accuracy_mixed)
+
+lmHeight2 <- lm(acc_voc_percent~acc_forf_percent + Bøger + Fakultet, data = Final) #Create a linear regression with two variables
+summary(lmHeight2) #Review the results -se screen shot i bachelor mappe
+#https://www.datacamp.com/tutorial/linear-regression-R
+
+    #Mat model PDF
+# a <- rep(0,95) 
+# for (i in 1:95){
+#   lmerlmer <- lm(acc_voc_percent ~ acc_forf_percent + Bøger + Alder  + Køn  ,
+#                        data = complete(Final , i))
+#   
+#   lmer2 <- lm(acc_voc_percent ~ acc_forf_percent + Bøger + Alder * Køn ,
+#                          data = complete(Final , i))
+# a[i] <- anova(lmer2, lmerlmer , test = "LRT")[2,5]
+# }
+# Sign_tests1 <- sum(ifelse(a < 0.05 , 1 , 0))
+# p_value1 <-sum(a)/95
+# test1 <- c(Sign_tests1,p_value1)
+
+# tjek for alder 
+# own gender bias 
+```
+#MAT# model halløj fra aflevering
+```{r}
+
+#helt fucked output, når jeg adder bøger, alder mv...
+model_fin <- lm(acc_voc_percent ~ acc_forf_percent + Køn, data = Final)
+
+
+summary(model_fin)
+
 ```
 
 correlater de? model, kan det predictes det ene by det andet?
 Tjek om det er de samme forfattere alle kender og omvendt om alle misser de samme
 
-
-
-CLUSTER ANALYSIS
+#CLUSTER ANALYSIS#
 ```{r}
 pairs(Final[6:11])
 
@@ -329,7 +377,7 @@ aggregate(nor,list(member),mean)
 aggregate(Final[,-c(1,1)],list(member),mean)
 
 #Silhouette Plot
-plot(silhouette(cutree(Final.hclust,3), distance))
+plot(silhouette(cutree(Final.hclust,2), distance))
 
 #Scree plot
 wss <- (nrow(nor)-1)*sum(apply(nor,2,var))
@@ -355,7 +403,29 @@ k2 <- kmeans(nor, centers = 2, nstart = 25) #nstart is the number of times k-mea
 fviz_cluster(k2, choose.vars = c("acc_voc_percent", "acc_forf_percent") ,data = nor)
 
 
+set.seed(11)
+k23 <- kmeans(nor, centers = 2, nstart = 25)
+sil <- silhouette(k23$cluster, dist(nor), ordered = FALSE)
+row.names(sil) <- row.names(nor) # Needed to use label option
+fviz_silhouette(sil, label = TRUE)
+
+# We see that Missouri and Arkansas are the poorest fits within their assigned clusters. We might want to take this into consider when interpreting the results for those states.
+
 ```
 
-The author of the factoextra package, Alboukadel Kassambara, informed me that if you omit the choose.vars argument, the function fviz_cluster transforms the initial set of variables into a new set of variables through principal component analysis (PCA). This dimensionality reduction algorithm operates on the four variables and outputs two new variables (Dim1 and Dim2) that represent the original variables, a projection or "shadow" of the original data set. Each dimension represent a certain amount of the variation (i.e. information) contained in the original data set. In this example, Dim1 and Dim2 represent 73% and 22.9% respectively. When plotted, this lower-dimensional picture can be difficult to interpret. In exploratory data analysis, it is therefore perhaps more useful to purposefully select two variables at a time through the choose.vars argument, and then compare the plots.
+```{r}
+# The author of the factoextra package, Alboukadel Kassambara, informed me that if you omit the choose.vars argument, the function fviz_cluster transforms the initial set of variables into a new set of variables through principal component analysis (PCA). This dimensionality reduction algorithm operates on the four variables and outputs two new variables (Dim1 and Dim2) that represent the original variables, a projection or "shadow" of the original data set. Each dimension represent a certain amount of the variation (i.e. information) contained in the original data set. In this example, Dim1 and Dim2 represent 73% and 22.9% respectively. When plotted, this lower-dimensional picture can be difficult to interpret. In exploratory data analysis, it is therefore perhaps more useful to purposefully select two variables at a time through the choose.vars argument, and then compare the plots.
+```
+
+Correlation Matrix
+```{r}
+library(corrplot)
+library(RColorBrewer)
+M <-cor(Final[6:11])
+corrplot(M, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+```
+
+
+
 
