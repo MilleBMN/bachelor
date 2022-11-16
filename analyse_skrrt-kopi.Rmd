@@ -14,7 +14,12 @@ pacman::p_load(tidyverse, readbulk, ggplot2, RColorBrewer, tidyr, lmerTest)
 ```
 
 ```{r}
-df_full <- read_bulk("data/vores filer")
+df_full <- read_bulk("forfatterGen_data")
+#df_full <- read_bulk("data/vores filer")
+
+#deleting id's on those not fit for the experiment
+# omit <- c("mbazte","3asjq1","3spth5","ck3gqh", "3asjq1", "8mmtx9", "bcrg2j", '3ovwc1','2onc8w','7dykwl', "zdf9td", "yxw221", "wvg4cm", "vfsse3", "uwy36q", "rez8hg", "gyk81z", "9czh3l", "4t0bm6", "10cshl", "youp6n", "eonqtx", "dlvdn3", "oxyw79")
+# fixIt <- filter(fixIt, !(exp_id %in% omit))
 ```
 
 #Cleaning
@@ -243,6 +248,20 @@ accuracy_all <- accuracy_all[order(-accuracy_all$acc_auth_percent),]
 ```
 
 #Visualizing
+##Plotting chance levels
+```{r}
+#For ord
+plot(pbinom(1:34,34,1/3))
+
+#For lydord
+plot(pbinom(1:34,32,1/4))
+
+#For forfatter
+plot(pbinom(1:100,100,1/2))
+
+```
+
+
 ##Plotting author recognition vs vocabulary accuracy
 ```{r}
 # ggplot(accuracy_all, aes(x = ID, y = accuracy_in_percent, fill = ))+
@@ -251,6 +270,7 @@ accuracy_all <- accuracy_all[order(-accuracy_all$acc_auth_percent),]
 # accuracy_all <- accuracy_all %>% 
 #   pivot_longer(ID, names_to = "", values_to = "count")
 
+# ALL together
 cols <- c('red','blue');
 ylim <- c(0,100);
 par(lwd=6);
@@ -266,6 +286,15 @@ barplot(
     args.legend=list(text.col=cols,col=cols,border=cols,bty='n')
 );
 
+
+ggplot(accuracy_all, aes(x = acc_auth_percent, y = acc_voc_percent))+
+  geom_point()+
+  geom_smooth()+
+  theme_minimal()+
+  labs(x = "Author accuracy", y = "Vocabulary accuracy")
+
+
+# Divided by gender
 
 ggplot(accuracy_all, aes(x = acc_auth_percent, y = acc_voc_percent, color = sex))+
   geom_point()+
@@ -298,58 +327,120 @@ ggplot(accuracy_all, aes(x = sex, y = forfatter, color = sex))+
   theme_minimal()+
   labs(x = "Gender", y = "Author accuracy")
 
+sum(accuracy_all$sex=="Mand")
+sum(accuracy_all$sex=="Kvinde")
+
 ```
 
 ##Plotting accuracy based on age
 ```{r}
 #Color = sex kan bare fjernes for dem alle, hvis det er...
 
+class(accuracy_all$age)
+accuracy_all$age <- as.numeric(accuracy_all$age)
+
 ggplot(accuracy_all, aes(x = age, y = ord, color = sex))+
   geom_point()+
+  geom_smooth(method = "lm")+
   theme_minimal()+
   labs(x = "Age", y = "Word accuracy")
 
 ggplot(accuracy_all, aes(x = age, y = lydord, color = sex))+
   geom_point()+
+  geom_smooth(method = "lm")+
   theme_minimal()+
   labs(x = "Age", y = "Sound-word accuracy")
 
 #Merging vocabulary tests
 ggplot(accuracy_all, aes(x = age, y = total_vocabulary, color = sex))+
   geom_point()+
+  geom_smooth(method = "lm")+
   theme_minimal()+
   labs(x = "Age", y = "Vocabulary accuracy")
 
+#Merging vocabulary tests
+ggplot(accuracy_all, aes(x = age, y = total_vocabulary))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  theme_minimal()+
+  labs(x = "Age", y = "Vocabulary accuracy")
+
+# ggplot(accuracy_all, aes(x = age, y = acc_voc_percent, color = sex))+
+#   geom_point()+
+#   geom_smooth(method = "lm")+
+#   theme_minimal()+
+#   labs(x = "Age", y = "Word accuracy")
+
 ggplot(accuracy_all, aes(x = age, y = forfatter, color = sex))+
   geom_point()+
+  geom_smooth(method = "lm")+
   theme_minimal()+
   labs(x = "Age", y = "Author accuracy")
+
+ggplot(accuracy_all, aes(x = age, y = forfatter))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  theme_minimal()+
+  labs(x = "Age", y = "Author accuracy")
+
+
+# LOOK AT THE DATA POINTS
+# We don't have enough participants of the different ages to make the regression line meaningful at all!! There are a lot with the age 22-23, but with only three women in the age 26-27, they will by very influential. So even though it looks like there might be a difference between the genders, we shouldn't bother, because it's not reliable at all! 
+
 ```
 
 ##Plotting accuracy based on books read
 ```{r}
-#Color = sex kan bare fjernes for dem alle, hvis det er...
+#De udkommenterede plots er identiske, bare hvor der er specificeret Color = sex. Men når man kører dem, så er der ikke forskel på mænd og kvinder, så ud med dem. 
 
 accuracy_all$books <- as.numeric(accuracy_all$books)
 
-ggplot(accuracy_all, aes(x = books, y = ord, color = sex))+
+# ggplot(accuracy_all, aes(x = books, y = ord, color = sex))+
+#   geom_point()+
+#   geom_smooth()+
+#   theme_minimal()+
+#   labs(x = "Books read", y = "Word accuracy")
+
+ggplot(accuracy_all, aes(x = books, y = ord))+
   geom_point()+
+  geom_smooth()+
   theme_minimal()+
   labs(x = "Books read", y = "Word accuracy")
 
-ggplot(accuracy_all, aes(x = books, y = lydord, color = sex))+
+# ggplot(accuracy_all, aes(x = books, y = lydord, color = sex))+
+#   geom_point()+
+#   geom_smooth()+
+#   theme_minimal()+
+#   labs(x = "Books read", y = "Sound-word accuracy")
+
+ggplot(accuracy_all, aes(x = books, y = lydord))+
   geom_point()+
+  geom_smooth()+
   theme_minimal()+
   labs(x = "Books read", y = "Sound-word accuracy")
 
 #Merging vocabulary tests
-ggplot(accuracy_all, aes(x = books, y = total_vocabulary, color = sex))+
+# ggplot(accuracy_all, aes(x = books, y = total_vocabulary, color = sex))+
+#   geom_point()+
+#   geom_smooth()+
+#   theme_minimal()+
+#   labs(x = "Books read", y = "Vocabulary accuracy")
+
+ggplot(accuracy_all, aes(x = books, y = total_vocabulary))+
   geom_point()+
+  geom_smooth()+
   theme_minimal()+
   labs(x = "Books read", y = "Vocabulary accuracy")
 
-ggplot(accuracy_all, aes(x = books, y = forfatter, color = sex))+
+# ggplot(accuracy_all, aes(x = books, y = forfatter, color = sex))+
+#   geom_point()+
+#   geom_smooth()+
+#   theme_minimal()+
+#   labs(x = "Books read", y = "Author accuracy")
+
+ggplot(accuracy_all, aes(x = books, y = forfatter))+
   geom_point()+
+  geom_smooth()+
   theme_minimal()+
   labs(x = "Books read", y = "Author accuracy")
 ```
@@ -358,32 +449,38 @@ ggplot(accuracy_all, aes(x = books, y = forfatter, color = sex))+
 ```{r}
 #Color = sex kan bare fjernes for dem alle, hvis det er...
 
+#Vær obs på at der ikke er mange datapoints i alle fakulteter
+
 class(accuracy_all$faculty)
 
 ggplot(accuracy_all, aes(x = faculty, y = ord))+
   geom_boxplot(width = 0.5)+
   geom_jitter(aes(x = faculty, color=sex))+ 
   theme_minimal()+
-  labs(x = "Faculty", y = "Word accuracy")
+  labs(x = "Faculty", y = "Word accuracy")+
+  theme(axis.text.x=element_text(angle = 50, hjust = 1))
 
 ggplot(accuracy_all, aes(x = faculty, y = lydord))+
   geom_boxplot(width = 0.5)+
   geom_jitter(aes(x = faculty, color=sex))+ 
   theme_minimal()+
-  labs(x = "Faculty", y = "Sound-word accuracy")
+  labs(x = "Faculty", y = "Sound-word accuracy")+
+  theme(axis.text.x=element_text(angle = 50, hjust = 1))
 
 #Merging vocabulary tests
 ggplot(accuracy_all, aes(x = faculty, y = total_vocabulary))+
   geom_boxplot(width = 0.5)+
   geom_jitter(aes(x = faculty, color=sex))+ 
   theme_minimal()+
-  labs(x = "Faculty", y = "Vocabulary accuracy")
+  labs(x = "Faculty", y = "Vocabulary accuracy")+
+  theme(axis.text.x=element_text(angle = 50, hjust = 1))
 
 ggplot(accuracy_all, aes(x = faculty, y = forfatter))+
   geom_boxplot(width = 0.5)+
   geom_jitter(aes(x = faculty, color=sex))+ 
   theme_minimal()+
-  labs(x = "Faculty", y = "Author accuracy")
+  labs(x = "Faculty", y = "Author accuracy")+
+  theme(axis.text.x=element_text(angle = 50, hjust = 1))
 ```
 
 
@@ -448,31 +545,34 @@ ggplot(accuracy_all, aes(x = log_forfatter))+
   geom_histogram() +
   theme_minimal()
 
+#Apparently everything becomes way less normal when log-transforming... So not doing that
+
 
 ```
 
 #Modelling
 
+
 ##Vocabulary accuracy by author accuracy
 ###The simple stuff: t-test and correlation test
 ```{r}
 #Checking homogeneity of variance 
-#Don't know if relevant
-bartlett.test(acc_voc_percent ~ acc_auth_percent, data=accuracy_all)
+#Don't know if relevant. It doesn't run. 
+#bartlett.test(acc_voc_percent ~ acc_auth_percent, data=accuracy_all)
 
 #T-test
 # We need an independent samples t-test, which this is, I'm pretty sure
 # If the assumption of normality is violated, we need to use WRS2::yuen(x ~ y, data = data) instead
 # T-test vil formentlig være ligegyldig. Citat fra Fabio: "Don't bother running a t-test, just do regression!"
-t.test(acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+#t.test(acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+#Vi kan alligevel ikke bruge t-test, fordi "grupperingsfaktor skal have præcis 2 niveauer",  
 
 #Pearson's correlation coefficient 
 #Both variables should be NORMALLY DISTRIBUTED (test, test test), otherwise use different correlation test, e.g. Spearman (kig uge 41, methods 1)
 cor <- cor.test(accuracy_all$acc_voc_percent, accuracy_all$acc_auth_percent, methods = "pearson")
-# The correlation coefficient is hard to interpret, so we standardize it by squaring r. This way we get the 'Effect size' which tells us how much of the variance (our data) is explained by our model. 
+# The correlation coefficient is hard to interpret, so we standardize it by squaring r. This way we get the 'Effect size' which tells us how much of the variance (our data) is explained by our model. Not sure how to do it though... 
 cor[4]
-0.5^2
-#Måske det her ikke lige er den helt rigtige måde at gøre det på
+
 
 ```
 
@@ -519,23 +619,36 @@ corrplot(M, type="upper", order="hclust",
 ```{r}
 # Linear regression implies causation (or at least prediction), IS THIS A PROBLEM FOR US?? It's just a correlation study... 
 
-m0 <- lm(acc_voc_percent ~ 0, data = accuracy_all)
-m1 <- lm(acc_voc_percent ~ acc_auth_percent, data = accuracy_all)
+m0 <- lm(acc_voc_percent ~ 1, data = accuracy_all)
+m1 <- lm(acc_voc_percent ~ acc_auth_percent, data = accuracy_all) #Fin
 summary(m1)
+summary(m0)
 
 #Konceptuelt spørgsmål: skal vi nogensinde bruge random intercept og slopes??
     #Det giver måske mening f.eks. med fakultet, hvis vi tænker, at folk fra forskellige fakulteter konsekvent er forskellige? Men hvorfor så ikke bare sætte det som en predictor?? Vi tænker vel i så fald, det er en systematic variance? 
-m2 <- lmer(acc_voc_percent ~ acc_auth_percent + (1|faculty), data = accuracy_all, REML = F) #'REML = F' will allow us to see information criteria for the model (taken from other script)
+m2 <- lmer(acc_voc_percent ~ acc_auth_percent + (1|faculty), data = accuracy_all, REML = F) #'REML = F' will allow us to see information criteria for the model (taken from another script)
 m3 <- lm(acc_voc_percent ~ acc_auth_percent + faculty, data = accuracy_all)
 m4 <- lm(acc_voc_percent ~ acc_auth_percent + books, data = accuracy_all)
 m5 <- lm(acc_voc_percent ~ acc_auth_percent + books + faculty, data = accuracy_all)
 m6 <- lm(acc_voc_percent ~ acc_auth_percent + books + faculty + sex, data = accuracy_all)
 m7 <- lm(acc_voc_percent ~ acc_auth_percent + books + faculty + sex + age, data = accuracy_all)
+m8 <- lm(acc_voc_percent ~ acc_auth_percent + sex, data = accuracy_all) #sammenlign med den her
+m9 <- lm(acc_voc_percent ~ acc_auth_percent + sex + age, data = accuracy_all)
+m10 <- lm(acc_voc_percent ~ acc_auth_percent + age, data = accuracy_all)
+m11 <- lm(acc_voc_percent ~ acc_auth_percent + age + faculty, data = accuracy_all)
 
-#Overvej om books skal ud, hvis den ikke er "troværdig"
+summary(m8)
+
+#Overvej om books skal ud, hvis den ikke er "troværdig" og i øvrigt skal sige det samme som author recognition
 
 #Skal vi bruge interactions mellem predictorer?? (* i stedet for +)
-m8 <- lm(acc_voc_percent ~ acc_auth_percent + books*faculty, data = accuracy_all) #ikke særlig gennemtænkt eksempel
+#int_m1 <- lm(acc_voc_percent ~ acc_auth_percent + books*faculty, data = accuracy_all) #ikke særlig gennemtænkt eksempel
+int_m2 <- lm(acc_voc_percent ~ acc_auth_percent*age, data = accuracy_all) #Måske?
+int_m3 <- lm(acc_voc_percent ~ acc_auth_percent + sex*age, data = accuracy_all) #mmh
+int_m4 <- lm(acc_voc_percent ~ acc_auth_percent*sex, data = accuracy_all) 
+int_m5 <- lm(acc_voc_percent ~ acc_auth_percent + sex*faculty, data = accuracy_all) 
+
+summary(int_m2)
 
 #ER DET ET PROBLEM AT BRUGE DERES PRÆSTATIONER I PROCENT? Den kan jo aldrig overgå 100, men modellen kan vel godt lave forudsigelser, der er højere? Til gengæld ville den jo heller aldrig kunne overgå hhv. 66 i ordforråd og 100 i forfatter, kan man sige. Er der noget her, der skal gøres? Skal man sætte en nedre og øvre threshold måske?
 
@@ -546,13 +659,37 @@ m8 <- lm(acc_voc_percent ~ acc_auth_percent + books*faculty, data = accuracy_all
 # Check class8_notes
 
 #See adjusted r squared of the models from their summaries
-summary(m3)$adj.r.squared
+tibble(summary(m0)$adj.r.squared, summary(m1)$adj.r.squared, summary(m8)$adj.r.squared)
 
 # anova 
-anova(m0, m1, m2, m3, m4, m5, m6, m7)
+anova(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9) #hvad er fejlen?
+anova(m0, m1)
+anova(m1, m8)
+anova(m0, m8)
+anova(m0, m1, m3, m4, m5, m6, m7, m8, m9, m10, m11)
 
 # AIC
-AIC(m0, m1, m2, m3, m4, m5, m6, m7)
+AIC(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9)
+
+#Nulmodellen har bedst AIC, men altså når man sammenligner m0 og m1, er m1 jo bedst. Og siden den forklarer noget varians og er signifikant, så er der jo grund til at køre med den! 
+#Det er tæt på, at det fortæller noget at inkludere køn også... Den har også en slightly bedre AIC, hvilket er bemærkelsesværdigt, når AIC straffer modeller med flere parametre. 
+
+
+#Comparing interaction models
+tibble(summary(int_m2)$adj.r.squared, summary(int_m3)$adj.r.squared, summary(int_m4)$adj.r.squared, summary(int_m5)$adj.r.squared)
+
+anova(int_m2, int_m3, int_m4, int_m5)
+#anova(m1, m8, int_m2, int_m3, int_m4, int_m5)
+anova(m1, m8, int_m2, int_m4)
+anova(m1, int_m2)
+anova(m8, int_m2)
+
+AIC(int_m2, int_m3, int_m4, int_m5)
+
+
+#So actually, it looks like the best model is int_m2 (acc_voc_percent ~ acc_auth_percent*age). But does it conceptually make sense?? No, why would they interact? And also, from the model-summary we see that when age and acc_auth_percent interact the impact is negative, which is not what we would expect (and remember, we don't have enough data points on the different ages actually, only few were older tha 24)
+
+#So, I would say m1 or m8
 
 ```
 
@@ -595,31 +732,72 @@ car::durbinWatsonTest(model)
 
 ##Skal vi modellere accuracy ~ books + fakultet + age + sex (alt efter hvilke der giver mening) for både forfatter og ordforråd??? For selv hvis acc_auth ikke kan predicte acc_voc, så kan det være, at vi stadig kan opdage en anden sjov korrelation
 ```{r}
+#Har virkelig prøvet mange forskellige kombinationer, ikke blot dem der står herunder... 
+
 #Kun ordforråd uden lyd
 o_acc <- lm(ord ~ faculty, data = accuracy_all)
-o_acc2 <- lm(ord ~ books, data = accuracy_all)
+o_acc2 <- lm(ord ~ books, data = accuracy_all) #Den her kan noget
 o_acc3 <- lm(ord ~ faculty + sex, data = accuracy_all)
 o_acc4 <- lm(ord ~ faculty + sex + age, data = accuracy_all)
+o_acc5 <- lm(ord ~ books + sex + age, data = accuracy_all)
+o_acc6 <- lm(ord ~ books + age, data = accuracy_all)
 #Prøv også gerne med andre sammensætninger
+#Fakultet er lort
+#Efter at have prøvet en hel masse forskelligt virker det til, at "books" er det eneste, der duer til noget!
 
 #Kun lydord
 l_acc <- lm(lydord ~ faculty, data = accuracy_all)
 l_acc2 <- lm(lydord ~ books, data = accuracy_all)
 l_acc3 <- lm(lydord ~ faculty + sex, data = accuracy_all)
 l_acc4 <- lm(lydord ~ faculty + sex + age, data = accuracy_all)
+l_acc5 <- lm(lydord ~ books + sex, data = accuracy_all) #Den her virker bedst 
+l_acc6 <- lm(lydord ~ books + sex + age, data = accuracy_all)
+#Igen, ud med fakultet
 
 #Begge ordforråd (i procent accuracy)
-voc_acc <- lm(acc_voc_percent ~ faculty, data = accuracy_all)
-voc_acc2 <- lm(acc_voc_percent ~ books, data = accuracy_all)
+voc_acc0 <- lm(acc_voc_percent ~ 1, data = accuracy_all)
+voc_acc1 <- lm(acc_voc_percent ~ faculty, data = accuracy_all)
+voc_acc2 <- lm(acc_voc_percent ~ books, data = accuracy_all) #den her
 voc_acc3 <- lm(acc_voc_percent ~ faculty + sex, data = accuracy_all)
-voc_acc4 <- lm(acc_voc_percent ~ faculty + sex + age, data = accuracy_all)
+voc_acc4 <- lm(acc_voc_percent ~ faculty + sex + age, data = accuracy_all) 
+voc_acc5 <- lm(acc_voc_percent ~ books + sex, data = accuracy_all) #Eller den her
+voc_acc6 <- lm(acc_voc_percent ~ books + sex + age, data = accuracy_all)
+voc_acc7 <- lm(acc_voc_percent ~ books + age, data = accuracy_all) #mmh... 
+voc_acc8 <- lm(acc_voc_percent ~ sex, data = accuracy_all)
+#Igen, ud med fakultet
+
+summary(voc_acc7)
+
+#Checking if performance on the two vocabulary tests correlate (IT SHOULD, HOPEFULLY)
+cor <- cor.test(accuracy_all$ord, accuracy_all$lydord, methods = "pearson")
+cor
+
+cols <- c('red','blue');
+ylim <- c(0,100);
+par(lwd=6);
+barplot(
+    t(accuracy_all[c('ord','lydord')]),
+    beside=T,
+    ylim=ylim,
+    border=cols,
+    col='white',
+    xlab='Participant',
+    ylab='Number correct',
+    legend.text=c('Ord accuracy','Lydord accuracy'),
+    args.legend=list(text.col=cols,col=cols,border=cols,bty='n')
+);
+
 
 #Forfattergenkendelse (i procent accuracy)
-for_acc <- lm(acc_auth_percent ~ faculty, data = accuracy_all)
-for_acc2 <- lm(acc_auth_percent ~ books, data = accuracy_all)
+for_acc0 <- lm(acc_auth_percent ~ 1, data = accuracy_all)
+for_acc1 <- lm(acc_auth_percent ~ faculty, data = accuracy_all)
+for_acc2 <- lm(acc_auth_percent ~ books, data = accuracy_all) #Den her
 for_acc3 <- lm(acc_auth_percent ~ faculty + sex, data = accuracy_all)
 for_acc4 <- lm(acc_auth_percent ~ faculty + sex + age, data = accuracy_all)
+for_acc5 <- lm(acc_auth_percent ~ books + sex + age, data = accuracy_all)
+for_acc6 <- lm(acc_auth_percent ~ books + sex, data = accuracy_all)
 
+summary(for_acc6)
 
 #Skal vi bruge den store df (df_clean) nogensinde, så det er repeated measures??? 
 #Tror det sgu faktisk ikke... 
@@ -627,10 +805,22 @@ for_acc4 <- lm(acc_auth_percent ~ faculty + sex + age, data = accuracy_all)
 #Skal vi bruge interactions mellem predictorer?? (* i stedet for +)
 
 
+
+#Umiddelbart ligner det, at books er en ret god predictor. Så måske har folk faktisk været ok gode til at vurdere, hvor meget de læser. Eller også er folk i hvert fald lige "overmodige" i deres svar, så forholdet stadig er det samme.
+
+
 ```
 
 ###Comparing models
 ```{r}
+anova(voc_acc0, voc_acc2, voc_acc5, voc_acc7)
+AIC(voc_acc0, voc_acc2, voc_acc5, voc_acc7)
+anova(voc_acc2, voc_acc7)
+#Mmh maybe actually voc_acc7 is best
+
+anova(for_acc0, for_acc2)
+AIC(for_acc0, for_acc2)
+#Model for_acc2 is best
 
 ```
 
@@ -697,6 +887,7 @@ ggplot(author_hits_ikkeforfattere, aes(x = forfatternummer, y = summed_acc, fill
 
 ```
 
+
 ##T-test: author recognition by the sex of the author
 ```{r}
 #Checking homogeneity of variance 
@@ -714,3 +905,249 @@ summary(lm(summed_acc ~ køn, data = author_hits))
 Andre sjove spørsgmål, man kunne stille:
 - Er nogen (f.eks. køn eller fakultet) mere tilbøjelige til at være "modige" med at svare Forfatter?
 - Er der et own-gender bias? Altså svarer kvinder oftere at kvinder er forfattere og omvendt? 
+
+
+
+
+#Sammenlign gym-elevers og uni-studerendes præstationer
+##Preparing final df
+###Add level of education as a column to our current df with uni-students
+```{r}
+uni <- accuracy_all
+uni$niveau <- "uni"
+
+```
+
+###Load and clean data from high school students
+```{r}
+gym <- read_bulk("data/data gym")
+
+# Selecting relevant coloumns
+gym <- gym %>% 
+  select(rt, stimulus, response, exp_id, uddannelse, dysleksi, foerstesprog, books, age, gender)
+
+# Spreading the answers to the second vocabulary test and author recognition test out into separate rows
+gym <- separate_rows(data = gym, response, sep = ",", convert = FALSE)
+
+# Making new coloumns; one with number of question and one with answer given by the participant (basically, we split up the information in the coloumn "response")
+gym <- gym %>%
+  mutate(valgmulighed = str_remove_all(response, ":.*|\\..*"))
+
+gym <- gym %>%
+  mutate(svar = str_remove_all(response, ".*:|\\..*"))
+
+# Removing irrelevant text and characters in all coloumns
+gym <- gym %>%
+  mutate(valgmulighed = str_remove_all(valgmulighed, "[{]"))
+
+gym <- gym %>%
+  mutate(svar = str_remove_all(svar, "[}]"))
+
+gym <- gym %>%
+  mutate(uddannelse = str_remove_all(uddannelse, ".*:|\\..*"))
+
+gym <- gym %>%
+  mutate(uddannelse = str_remove_all(uddannelse, "[}]"))
+
+gym <- gym %>%
+  mutate(dysleksi = str_remove_all(dysleksi, ".*:|\\..*"))
+
+gym <- gym %>%
+  mutate(dysleksi = str_remove_all(dysleksi, "[}]"))
+
+gym <- gym %>%
+  mutate(foerstesprog = str_remove_all(foerstesprog, ".*:|\\..*"))
+
+gym <- gym %>%
+  mutate(foerstesprog = str_remove_all(foerstesprog, "[}]"))
+
+gym <- gym %>%
+  mutate(books = str_remove_all(books, ".*:|\\..*"))
+
+gym <- gym %>%
+  mutate(books = str_remove_all(books, "[}]"))
+
+gym <- gym %>%
+  mutate(age = str_remove_all(age, ".*:|\\..*"))
+
+gym <- gym %>%
+  mutate(age = str_remove_all(age, "[}]"))
+
+gym <- gym %>%
+  mutate(gender = str_remove_all(gender, ".*:|\\..*"))
+
+gym <- gym %>%
+  mutate(gender = str_remove_all(gender, "[}]"))
+
+# Removing quotation marks in all coloumns
+gym <- as.data.frame(sapply(gym, function(x) gsub("\"", "", x)))
+
+#removing irrelevant rows 
+gym <- gym %>% 
+  filter(!grepl('<p>', stimulus)) %>% 
+  filter(!grepl('fakultet', valgmulighed)) %>% 
+  filter(!grepl('ordblind', valgmulighed)) %>% 
+  filter(!grepl('førstesprog', valgmulighed)) %>% 
+  filter(!grepl('Q0', valgmulighed)) %>% 
+  filter(!grepl('Køn', valgmulighed))
+
+gym <- gym %>% drop_na()
+
+gym['accuracy'] <- NA
+
+gym$accuracy <- ifelse(gym$svar == "gis"|gym$svar == "charlatan"|gym$svar == "dorsk"|gym$svar == "resolut"|gym$svar == "reptil"|gym$svar == "relikvie"|gym$svar == "sololie"|gym$svar == "reservat"|gym$svar == "istap"|gym$svar == "trubadur"|gym$svar == "radering"|gym$svar == "fjante"|gym$svar == "kattun"|gym$svar == "halsstarrig"|gym$svar == "grif"|gym$svar == "dadle"|gym$svar == "idelig"|gym$svar == "rudel"|gym$svar == "sufflør"|gym$svar == "prelle"|gym$svar == "krill"|gym$svar == "spagat"|gym$svar == "knibsk"|gym$svar == "chalup"|gym$svar == "svanger"|gym$svar == "dirk"|gym$svar == "puld"|gym$svar == "rulam"|gym$svar == "trappist"|gym$svar == "spæge"|gym$svar == "chihuahua"|gym$svar == "anløben"|gym$svar == "skæfte"|gym$svar == "klandestin",  1, ifelse(gym$stimulus == "audio/forf/Centrifuge.mp3" & gym$response == 1 
+|gym$stimulus == "audio/forf/Krank.mp3" & gym$response == 3 
+|gym$stimulus == "audio/forf/Gobelin.mp3" & gym$response == 1
+|gym$stimulus == "audio/forf/Asiet.mp3" & gym$response == 2
+|gym$stimulus == "audio/forf/Daggert.mp3" & gym$response == 2
+|gym$stimulus == "audio/forf/Longjohn.mp3" & gym$response == 3
+|gym$stimulus == "audio/forf/Chatol.mp3" & gym$response == 2
+|gym$stimulus == "audio/forf/Albatros.mp3" & gym$response == 1
+|gym$stimulus == "audio/forf/Fontaene.mp3" & gym$response == 3
+|gym$stimulus == "audio/forf/Voliere.mp3" & gym$response == 0
+|gym$stimulus == "audio/forf/Unbraconogle.mp3" & gym$response == 1
+|gym$stimulus == "audio/forf/Terrin.mp3" & gym$response == 2
+|gym$stimulus == "audio/forf/Metronom.mp3" & gym$response == 1
+|gym$stimulus == "audio/forf/Gejstlig.mp3" & gym$response == 2
+|gym$stimulus == "audio/forf/Alkymi.mp3" & gym$response == 1
+|gym$stimulus == "audio/forf/Mokkasin.mp3" & gym$response == 0
+|gym$stimulus == "audio/forf/Eufori.mp3" & gym$response == 1
+|gym$stimulus == "audio/forf/Litografi.mp3" & gym$response == 3
+|gym$stimulus == "audio/forf/Cisterne.mp3" & gym$response == 1 
+|gym$stimulus == "audio/forf/Gadekaer.mp3" & gym$response == 0 
+|gym$stimulus == "audio/forf/Lazaret.mp3" & gym$response == 1 
+|gym$stimulus == "audio/forf/Obelisk.mp3" & gym$response == 1 
+|gym$stimulus == "audio/forf/Visir.mp3" & gym$response == 1 
+|gym$stimulus == "audio/forf/Trawler.mp3" & gym$response == 1 
+|gym$stimulus == "audio/forf/Pergola.mp3" & gym$response == 2 
+|gym$stimulus == "audio/forf/Pendel.mp3" & gym$response == 3 
+|gym$stimulus == "audio/forf/Vimpel.mp3" & gym$response == 2 
+|gym$stimulus == "audio/forf/Polio.mp3" & gym$response == 3 
+|gym$stimulus == "audio/forf/Lumbago.mp3" & gym$response == 2 
+|gym$stimulus == "audio/forf/Likvid.mp3" & gym$response == 3 
+|gym$stimulus == "audio/forf/Stramaj.mp3" & gym$response == 0 
+|gym$stimulus == "audio/forf/Skurv.mp3" & gym$response == 0, 1, ifelse(gym$svar == "Ikke forfatter", 0, ifelse(gym$valgmulighed == "Forfatter3" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter5" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter7" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter10" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter12" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter13" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter16" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter18" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter21" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter22" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter24" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter25" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter26" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter28" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter30" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter32" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter35" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter36" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter38" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter40" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter44" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter46" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter47" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter50" & gym$svar == "Forfatter"|
+gym$valgmulighed == "Forfatter52" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter53" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter54" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter55" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter58" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter60" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter62" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter65" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter67" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter69" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter71" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter72" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter74" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter75" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter77" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter80" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter82" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter84" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter87" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter89" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter91" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter93" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter95" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter96" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter98" & gym$svar == "Forfatter" |
+gym$valgmulighed == "Forfatter100" & gym$svar == "Forfatter", 1, 
+ifelse(gym$valgmulighed == "Forfatter1" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter2" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter4" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter6" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter8" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter9" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter11" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter14" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter15" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter17" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter19" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter20" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter23" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter27" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter29" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter31" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter34" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter33" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter37" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter39" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter42" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter43" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter41" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter45" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter48" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter49" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter51" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter56" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter57" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter59" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter61" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter63" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter64" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter66" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter68" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter70" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter73" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter76" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter78" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter79" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter81" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter83" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter85" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter86" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter88" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter90" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter92" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter94" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter97" & gym$svar == "Forfatter"|gym$valgmulighed == "Forfatter99" & gym$svar == "Forfatter", -1, 0)))))
+
+gym['author_sex'] <- NA
+
+gym$author_sex <- ifelse(gym$valgmulighed == "Forfatter3"|gym$valgmulighed == "Forfatter5"|gym$valgmulighed == "Forfatter7"|gym$valgmulighed == "Forfatter9"|gym$valgmulighed == "Forfatter11"|gym$valgmulighed == "Forfatter13"|gym$valgmulighed == "Forfatter17"|gym$valgmulighed == "Forfatter20"|gym$valgmulighed == "Forfatter22"|gym$valgmulighed == "Forfatter24"|gym$valgmulighed == "Forfatter25"|gym$valgmulighed == "Forfatter29"|gym$valgmulighed == "Forfatter32"|gym$valgmulighed == "Forfatter34"|gym$valgmulighed == "Forfatter36"|gym$valgmulighed == "Forfatter38"|gym$valgmulighed == "Forfatter39"|gym$valgmulighed == "Forfatter43"|gym$valgmulighed == "Forfatter45"|gym$valgmulighed == "Forfatter48"|gym$valgmulighed == "Forfatter50"|gym$valgmulighed == "Forfatter51"|gym$valgmulighed == "Forfatter54"|gym$valgmulighed == "Forfatter56"|gym$valgmulighed == "Forfatter58"|gym$valgmulighed == "Forfatter60"|gym$valgmulighed == "Forfatter61"|gym$valgmulighed == "Forfatter63"|gym$valgmulighed == "Forfatter65"|gym$valgmulighed == "Forfatter67"|gym$valgmulighed == "Forfatter68"|gym$valgmulighed == "Forfatter69"|gym$valgmulighed == "Forfatter71"|gym$valgmulighed == "Forfatter73"|gym$valgmulighed == "Forfatter74"|gym$valgmulighed == "Forfatter78"|gym$valgmulighed == "Forfatter81"|gym$valgmulighed == "Forfatter83"|gym$valgmulighed == "Forfatter84"|gym$valgmulighed == "Forfatter85"|gym$valgmulighed == "Forfatter86"|gym$valgmulighed == "Forfatter88"|gym$valgmulighed == "Forfatter90"|gym$valgmulighed == "Forfatter91"|gym$valgmulighed == "Forfatter92"|gym$valgmulighed == "Forfatter93"|gym$valgmulighed == "Forfatter95"|gym$valgmulighed == "Forfatter97"|gym$valgmulighed == "Forfatter98"|gym$valgmulighed == "Forfatter99","kvinde", ifelse(gym$valgmulighed == "Forfatter1"|gym$valgmulighed == "Forfatter2"|gym$valgmulighed == "Forfatter4"|gym$valgmulighed == "Forfatter6"|gym$valgmulighed == "Forfatter8"|gym$valgmulighed == "Forfatter10"|gym$valgmulighed == "Forfatter12"|gym$valgmulighed == "Forfatter14"|gym$valgmulighed == "Forfatter15"|gym$valgmulighed == "Forfatter16"|gym$valgmulighed == "Forfatter18"|gym$valgmulighed == "Forfatter19"|gym$valgmulighed == "Forfatter21"|gym$valgmulighed == "Forfatter23"|gym$valgmulighed == "Forfatter26"|gym$valgmulighed == "Forfatter27"|gym$valgmulighed == "Forfatter28"|gym$valgmulighed == "Forfatter30"|gym$valgmulighed == "Forfatter31"|gym$valgmulighed == "Forfatter33"|gym$valgmulighed == "Forfatter35"|gym$valgmulighed == "Forfatter37"|gym$valgmulighed == "Forfatter40"|gym$valgmulighed == "Forfatter41"|gym$valgmulighed == "Forfatter42"|gym$valgmulighed == "Forfatter44"|gym$valgmulighed == "Forfatter46"|gym$valgmulighed == "Forfatter47"|gym$valgmulighed == "Forfatter49"|gym$valgmulighed == "Forfatter52"|gym$valgmulighed == "Forfatter53"|gym$valgmulighed == "Forfatter55"|gym$valgmulighed == "Forfatter57"|gym$valgmulighed == "Forfatter59"|gym$valgmulighed == "Forfatter62"|gym$valgmulighed == "Forfatter64"|gym$valgmulighed == "Forfatter66"|gym$valgmulighed == "Forfatter70"|gym$valgmulighed == "Forfatter72"|gym$valgmulighed == "Forfatter75"|gym$valgmulighed == "Forfatter76"|gym$valgmulighed == "Forfatter77"|gym$valgmulighed == "Forfatter79"|gym$valgmulighed == "Forfatter80"|gym$valgmulighed == "Forfatter82"|gym$valgmulighed == "Forfatter87"|gym$valgmulighed == "Forfatter89"|gym$valgmulighed == "Forfatter94"|gym$valgmulighed == "Forfatter96"|gym$valgmulighed == "Forfatter100","mand", NA))
+
+gym <- gym %>% 
+  select(-c(stimulus, response)) %>% 
+  filter(dysleksi == "Nej")
+
+gym['trial_type'] <- NA
+
+gym$trial_type <- ifelse(gym$svar == "Forfatter" | gym$svar == "Ikke forfatter", "author_reg", ifelse(gym$svar == 0 | gym$svar == 1 | gym$svar == 2 | gym$svar == 3, "m_lyd", "u_lyd"))
+
+author_reg_gym <- gym %>% 
+  filter(trial_type == "author_reg_gym")
+
+author_reg_gym$korrekt_svar <- ifelse(author_reg_gym$valgmulighed == "Forfatter3"|author_reg_gym$valgmulighed == "Forfatter5"|author_reg_gym$valgmulighed == "Forfatter7" |author_reg_gym$valgmulighed == "Forfatter10"|author_reg_gym$valgmulighed == "Forfatter12" |author_reg_gym$valgmulighed == "Forfatter13" |author_reg_gym$valgmulighed == "Forfatter16" |author_reg_gym$valgmulighed == "Forfatter18" |author_reg_gym$valgmulighed == "Forfatter21" |author_reg_gym$valgmulighed == "Forfatter22" |author_reg_gym$valgmulighed == "Forfatter24" |author_reg_gym$valgmulighed == "Forfatter25"|author_reg_gym$valgmulighed == "Forfatter26"|author_reg_gym$valgmulighed == "Forfatter28" |author_reg_gym$valgmulighed == "Forfatter30" |author_reg_gym$valgmulighed == "Forfatter32"|author_reg_gym$valgmulighed == "Forfatter35" |author_reg_gym$valgmulighed == "Forfatter36" |author_reg_gym$valgmulighed == "Forfatter38"|author_reg_gym$valgmulighed == "Forfatter40" |author_reg_gym$valgmulighed == "Forfatter44"|author_reg_gym$valgmulighed == "Forfatter46" |author_reg_gym$valgmulighed == "Forfatter47" |author_reg_gym$valgmulighed == "Forfatter50" |
+author_reg_gym$valgmulighed == "Forfatter52" |
+author_reg_gym$valgmulighed == "Forfatter53" |
+author_reg_gym$valgmulighed == "Forfatter54"  |
+author_reg_gym$valgmulighed == "Forfatter55"  |
+author_reg_gym$valgmulighed == "Forfatter58"  |
+author_reg_gym$valgmulighed == "Forfatter60"  |
+author_reg_gym$valgmulighed == "Forfatter62"  |
+author_reg_gym$valgmulighed == "Forfatter65"  |
+author_reg_gym$valgmulighed == "Forfatter67"  |
+author_reg_gym$valgmulighed == "Forfatter69"  |
+author_reg_gym$valgmulighed == "Forfatter71" |
+author_reg_gym$valgmulighed == "Forfatter72" |
+author_reg_gym$valgmulighed == "Forfatter74" |
+author_reg_gym$valgmulighed == "Forfatter75" |
+author_reg_gym$valgmulighed == "Forfatter77"  |
+author_reg_gym$valgmulighed == "Forfatter80"  |
+author_reg_gym$valgmulighed == "Forfatter82" |
+author_reg_gym$valgmulighed == "Forfatter84"  |
+author_reg_gym$valgmulighed == "Forfatter87" |
+author_reg_gym$valgmulighed == "Forfatter89"  |
+author_reg_gym$valgmulighed == "Forfatter91"  |
+author_reg_gym$valgmulighed == "Forfatter93"  |
+author_reg_gym$valgmulighed == "Forfatter95"  |
+author_reg_gym$valgmulighed == "Forfatter96" |
+author_reg_gym$valgmulighed == "Forfatter98"  |
+author_reg_gym$valgmulighed == "Forfatter100", "Forfatter", "Ikke forfatter")
+
+no_sound_gym <- gym %>% 
+  filter(trial_type == "u_lyd")
+
+sound_gym <- gym %>% 
+  filter(trial_type == "m_lyd")
+
+author_acc_by_part_gym <- as.data.frame(aggregate(author_reg_gym$accuracy, by=list(ID=author_reg_gym$exp_id, age=author_reg_gym$age, sex=author_reg_gym$gender, books=author_reg_gym$books, faculty=author_reg_gym$uddannelse), FUN=sum))
+sound_acc_by_part_gym <- as.data.frame(aggregate(sound_gym$accuracy, by=list(ID=sound_gym$exp_id), FUN=sum))
+no_sound_gym_acc_by_part <- as.data.frame(aggregate(no_sound_gym$accuracy, by=list(ID=no_sound_gym$exp_id), FUN=sum))
+
+accuracy_all_gym <- merge(author_acc_by_part_gym, sound_acc_by_part_gym, by = "ID")
+accuracy_all_gym <- merge(accuracy_all_gym, no_sound_gym_acc_by_part, by ="ID")
+names(accuracy_all_gym)[6] <- "forfatter"
+names(accuracy_all_gym)[7] <- "lydord"
+names(accuracy_all_gym)[8] <- "ord"
+
+accuracy_all_gym$total_vocabulary <- accuracy_all_gym$lydord+accuracy_all$ord
+accuracy_all_gym$acc_auth_percent <- accuracy_all_gym$forfatter/50*100
+accuracy_all_gym$acc_voc_percent <- accuracy_all_gym$total_vocabulary/66*100
+
+accuracy_all_gym <- accuracy_all_gym[order(-accuracy_all_gym$acc_auth_percent),]
+
+gym <- accuracy_all_gym
+
+```
+
+###Add level of education as a column to our df with high school students and merge the two data frames
+```{r}
+gym$niveau <- "gym"
+
+full_df <- merge(gym, uni)
+```
+
+##Comparing the performances between uni and high school students
+```{r}
+
+#Should probably test some assumptions on the high school students and shit like that... 
+
+t.test(acc_voc_percent ~ niveau, data = full_df)
+t.test(acc_auth_percent ~ niveau, data = full_df)
+
+lm(acc_voc_percent ~ niveau, data = full_df)
+lm(acc_auth_percent ~ niveau, data = full_df)
+
+```
+
+##Comparing if our model works better or worse on high school students
+```{r}
+lm(acc_voc_percent ~ acc_auth_percent, data = gym)
+
+```
+
+
